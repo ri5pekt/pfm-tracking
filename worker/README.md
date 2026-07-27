@@ -1,5 +1,8 @@
-# Worker service
+# Worker
 
-BullMQ jobs: `shipbob.orders.sync`, `shipbob.tracking.poll`, KLB, TrackingMore, Klaviyo, stalled, retention.
+BullMQ worker process. Phase 0 boots Redis connection + heartbeat job.
+Phase 1 adds `shipbob.orders.sync` and `shipbob.tracking.poll`.
 
-See `docs/dev-plan.md` §5 and `plans/phase-1-shipbob-mvp.md`.
+```bash
+npm run dev -w worker
+```

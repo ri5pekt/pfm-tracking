@@ -1,6 +1,7 @@
 {
   "name": "pfm-tracking",
   "private": true,
+  "version": "0.1.0",
   "description": "Particle For Men order tracking platform (Narvar replacement)",
   "workspaces": [
     "api",
@@ -8,7 +9,17 @@
     "admin"
   ],
   "scripts": {
-    "compose:up": "docker compose up -d postgres redis",
-    "compose:down": "docker compose down"
+    "build": "npm run build -w api && npm run build -w worker && npm run build -w admin",
+    "dev:api": "npm run dev -w api",
+    "dev:worker": "npm run dev -w worker",
+    "dev:admin": "npm run dev -w admin",
+    "migrate": "npm run migrate -w api",
+    "test": "npm run test -w api",
+    "compose:up": "docker compose up -d --build",
+    "compose:down": "docker compose down",
+    "compose:db": "docker compose up -d postgres redis"
+  },
+  "engines": {
+    "node": ">=20"
   }
 }

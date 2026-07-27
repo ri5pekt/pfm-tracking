@@ -6,18 +6,18 @@ Exit criterion from `docs/dev-plan.md`:
 ## Checklist
 
 ### Scaffold
-- [ ] Monorepo folders: `api/`, `worker/`, `admin/` (optional `web/`)
-- [ ] Root `package.json` workspaces (or separate packages) + shared TypeScript config
-- [ ] `docker-compose.yml`: Postgres 16, Redis, api, worker, admin
-- [ ] `.env` from `.env.example` (local only)
+- [x] Monorepo folders: `api/`, `worker/`, `admin/` (optional `web/`)
+- [x] Root `package.json` workspaces (or separate packages) + shared TypeScript config
+- [x] `docker-compose.yml`: Postgres 16, Redis, api, worker, admin
+- [x] `.env` from `.env.example` (local only)
 
 ### Schema (see `docs/dev-plan.md` §3.2)
-- [ ] Migrations: `orders`, `shipments`, `shipment_items`, `tracking_events`
-- [ ] `carriers`, `status_mappings` (+ seed from §13 live codes)
-- [ ] `notification_log`, `ingestion_runs`, `sync_cursors`
-- [ ] `admin_users`, `admin_invites`, `admin_audit_log`
-- [ ] `data_erasure_requests`, lightweight `api_call_log`
-- [ ] `products`
+- [x] Migrations: `orders`, `shipments`, `shipment_items`, `tracking_events`
+- [x] `carriers`, `status_mappings` (+ seed from §13 live codes)
+- [x] `notification_log`, `ingestion_runs`, `sync_cursors`
+- [x] `admin_users`, `admin_invites`, `admin_audit_log`
+- [x] `data_erasure_requests`, lightweight `api_call_log`
+- [x] `products`
 
 ### Status seed (minimum)
 Map Tracking API → internal:
@@ -34,16 +34,31 @@ Map Tracking API → internal:
 | Delivered | DELIVERED | 90 |
 
 ### Admin auth
-- [ ] Login (email + password), no self-signup
-- [ ] Invite flow + roles (`admin` / `staff`)
-- [ ] Audit log on user actions
-- [ ] `GET /admin/version` with build-time GIT_SHA / APP_VERSION
-- [ ] Shell layout stub matching UI reference (sidebar + empty shipments list) — see `docs/ui-references/`
+- [x] Login (email + password), no self-signup
+- [x] Invite flow + roles (`admin` / `staff`)
+- [x] Audit log on user actions
+- [x] `GET /admin/version` with build-time GIT_SHA / APP_VERSION
+- [x] Shell layout stub matching UI reference (sidebar + empty shipments list) — see `docs/ui-references/`
 
 ### Infra hygiene
-- [ ] Wrapped HTTP client stub (redact Authorization)
-- [ ] CI stub: test → build images tagged with git SHA
+- [x] Wrapped HTTP client stub (redact Authorization)
+- [x] CI stub: test → build images tagged with git SHA
 - [ ] Confirm `HasTracking` / `IsTrackingUploaded` on current PAT (informational only)
+
+## Local verify
+
+```bash
+docker compose up -d postgres redis
+npm install
+npm run migrate
+npm run dev -w api          # :3000
+npm run dev -w admin        # :5173 (proxies /admin)
+# optional: npm run dev -w worker
+```
+
+Log in with `ADMIN_BOOTSTRAP_EMAIL` / `ADMIN_BOOTSTRAP_PASSWORD`, open Users, invite a second account.
+
+Full stack images: `docker compose up -d --build` (after migrate via `docker compose --profile tools run --rm migrate`).
 
 ## Out of scope for Phase 0
 - Live ShipBob poll (Phase 1)

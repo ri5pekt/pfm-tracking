@@ -35,6 +35,26 @@ scripts/   # one-off utilities
 
 Copy `.env.example` → `.env`. Never commit `.env`.
 
+Minimum for Phase 0 local run:
+
+```env
+DATABASE_URL=postgres://pfm:pfm@localhost:5432/pfm_tracking
+REDIS_URL=redis://localhost:6379
+ADMIN_SESSION_SECRET=change-me-to-a-long-random-string
+ADMIN_BOOTSTRAP_EMAIL=admin@example.com
+ADMIN_BOOTSTRAP_PASSWORD=changeme123
+PUBLIC_BASE_URL=http://localhost:5173
+```
+
+```bash
+docker compose up -d postgres redis
+npm install && npm run migrate
+npm run dev -w api
+npm run dev -w admin
+```
+
+Admin: http://localhost:5173 — bootstrap credentials from `.env`.
+
 Research credentials live in the research project only; paste working keys into this `.env` when starting Phase 1 integration tests.
 
 ## Research provenance
