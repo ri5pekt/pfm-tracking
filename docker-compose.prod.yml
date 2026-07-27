@@ -62,7 +62,7 @@ services:
       postgres:
         condition: service_healthy
     profiles: ['tools']
-    working_directory: /app
+    working_dir: /app
     entrypoint: ['npx', 'tsx']
     restart: 'no'
 
