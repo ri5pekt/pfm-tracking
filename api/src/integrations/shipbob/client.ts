@@ -82,14 +82,45 @@ export class ShipBobClient {
   async listOrders(params: {
     page?: number;
     limit?: number;
+    /** Filter by insert time (orders created after). Prefer lastUpdate* for sync. */
     startDate?: string;
     endDate?: string;
+    /** Filter by last update — catches Processing → LabeledCreated after first ingest. */
+    lastUpdateStartDate?: string;
+    lastUpdateEndDate?: string;
+    /** Filter by last tracking update (orders that already have tracking). */
+    lastTrackingUpdateStartDate?: string;
+    lastTrackingUpdateEndDate?: string;
+    hasTracking?: boolean;
+    /** ShipBob order ids, comma-separated on the wire. */
+    ids?: Array<string | number>;
+    /** Reference ids / store order numbers, comma-separated on the wire. */
+    referenceIds?: string[];
   }): Promise<ShipBobOrder[]> {
     const url = new URL(`${this.opts.ordersBase.replace(/\/$/, '')}/order`);
     url.searchParams.set('Page', String(params.page ?? 1));
     url.searchParams.set('Limit', String(params.limit ?? 250));
     if (params.startDate) url.searchParams.set('StartDate', params.startDate);
     if (params.endDate) url.searchParams.set('EndDate', params.endDate);
+    if (params.lastUpdateStartDate) {
+      url.searchParams.set('LastUpdateStartDate', params.lastUpdateStartDate);
+    }
+    if (params.lastUpdateEndDate) {
+      url.searchParams.set('LastUpdateEndDate', params.lastUpdateEndDate);
+    }
+    if (params.lastTrackingUpdateStartDate) {
+      url.searchParams.set('LastTrackingUpdateStartDate', params.lastTrackingUpdateStartDate);
+    }
+    if (params.lastTrackingUpdateEndDate) {
+      url.searchParams.set('LastTrackingUpdateEndDate', params.lastTrackingUpdateEndDate);
+    }
+    if (params.hasTracking != null) {
+      url.searchParams.set('HasTracking', String(params.hasTracking));
+    }
+    if (params.ids?.length) url.searchParams.set('IDs', params.ids.map(String).join(','));
+    if (params.referenceIds?.length) {
+      url.searchParams.set('ReferenceIds', params.referenceIds.join(','));
+    }
 
     const res = await loggedFetch(url.toString(), {
       integration: 'shipbob',

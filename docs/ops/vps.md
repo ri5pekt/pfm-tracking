@@ -25,13 +25,24 @@ docker compose -f docker-compose.prod.yml logs -f worker
 
 | Setting | Value | Effect |
 | :--- | :--- | :--- |
-| `shipbob.orders.sync` cursor | `now()` (via `seed-fresh-cursors`) | Only new ShipBob orders (+15m overlap) |
+| `shipbob.orders.sync` cursor | `now()` (via `seed-fresh-cursors`) | Watermark for **LastUpdate** window (+15m overlap) |
 | `SHIPBOB_ORDERS_LOOKBACK_HOURS` | `1` | Fallback if cursor missing |
-| `KLB_WINDOW_DAYS` | `0` | Today UTC only |
+| `KLB_WINDOW_DAYS` | `7`+ (not `0` long-term) | Trailing ship-date window; KLB can lag a day / weekend |
 
 **Do not** run `seed:samples` / `seed:more` on this host.
 
 Catalog seed (`seed-catalog`) loads product titles/images only — no shipments.
+
+## ShipBob sync notes (why we recheck)
+
+`StartDate` / `EndDate` filter by **order insert time**. Warehouse labeling often happens hours later, so a create-time cursor **stops re-seeing** the order after the window moves on — that was why order `4039365` got `LabeledCreated` in ShipBob while our DB stayed at 0 shipments.
+
+Fix (in `scripts/sync-shipbob.ts`):
+
+1. Main pass uses **`LastUpdateStartDate` / `LastUpdateEndDate`** (matches the plan's "last-update watermark").
+2. Each cycle also **rechecks** up to 200 local orders (last 21 days) that were seen by ShipBob sync but still have no ShipBob tracking shipment, via `ReferenceIds=…`.
+
+KLB already uses a trailing ship-date window; keep `KLB_WINDOW_DAYS` wide enough for weekend/next-day label uploads (recommend **7–30**, not `0` after the initial fresh-start cutover).
 
 ## Intervals (adjust after watching logs)
 
