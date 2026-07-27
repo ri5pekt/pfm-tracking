@@ -1,0 +1,56 @@
+# Example: bridge old Narvar tracking URLs → PFM /go
+#
+# Narvar inbox links vary by account. Confirm the live pattern before cutover
+# (often tracking.narvar.com/... or a brand subdomain). Then either:
+#
+# A) DNS for the old hostname → this Nginx (grace period), or
+# B) Narvar-side redirect if they support it after cancellation.
+#
+# PFM bridge: GET /go?order=ORDER&email=EMAIL  (or &postcode=…) → 302 /t/:token
+#
+# Replace TRACKING_HOST and upstream with your deploy values.
+
+# upstream pfm_api { server 127.0.0.1:3000; }
+
+server {
+  listen 443 ssl http2;
+  server_name tracking.particleformen.com;
+
+  # ssl_certificate     /etc/letsencrypt/live/TRACKING_HOST/fullchain.pem;
+  # ssl_certificate_key /etc/letsencrypt/live/TRACKING_HOST/privkey.pem;
+
+  # --- Prefer explicit order+email query if present on the Narvar URL ---
+  # Adjust arg names after inspecting a live Narvar link.
+  location / {
+    # If Narvar uses ?order_number= & email=
+    if ($arg_order_number != "") {
+      return 302 /go?order=$arg_order_number&email=$arg_email;
+    }
+    if ($arg_order != "") {
+      return 302 /go?order=$arg_order&email=$arg_email;
+    }
+
+    # Fallback: branded lookup page (customer re-enters email)
+    return 302 /lookup;
+  }
+
+  location = /go {
+    proxy_pass http://127.0.0.1:3000/go;
+    proxy_set_header Host $host;
+    proxy_set_header X-Real-IP $remote_addr;
+  }
+
+  location = /lookup {
+    proxy_pass http://127.0.0.1:3000/lookup;
+    proxy_set_header Host $host;
+  }
+
+  location /t/ {
+    proxy_pass http://127.0.0.1:3000/t/;
+    proxy_set_header Host $host;
+  }
+
+  location /health {
+    proxy_pass http://127.0.0.1:3000/health;
+  }
+}

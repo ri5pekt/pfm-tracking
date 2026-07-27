@@ -1,0 +1,10 @@
+{
+  "_comment": "Manual catalog SKUs not in products.json (samples, vials, etc.). Synced by sync:products after Shopify catalog.",
+  "products": [
+    {
+      "sku": "70117000",
+      "title": "Gravité Cologne Vial",
+      "imageFile": "70117000.jpg"
+    }
+  ]
+}

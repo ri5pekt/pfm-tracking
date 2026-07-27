@@ -1,25 +1,41 @@
-{
-  "name": "pfm-tracking",
-  "private": true,
-  "version": "0.1.0",
-  "description": "Particle For Men order tracking platform (Narvar replacement)",
-  "workspaces": [
-    "api",
-    "worker",
-    "admin"
-  ],
-  "scripts": {
-    "build": "npm run build -w api && npm run build -w worker && npm run build -w admin",
-    "dev:api": "npm run dev -w api",
-    "dev:worker": "npm run dev -w worker",
-    "dev:admin": "npm run dev -w admin",
-    "migrate": "npm run migrate -w api",
-    "test": "npm run test -w api",
-    "compose:up": "docker compose up -d --build",
-    "compose:down": "docker compose down",
-    "compose:db": "docker compose up -d postgres redis"
-  },
-  "engines": {
-    "node": ">=20"
-  }
-}
+{
+  "name": "pfm-tracking",
+  "private": true,
+  "version": "0.1.0",
+  "description": "Particle For Men order tracking platform (Narvar replacement)",
+  "workspaces": [
+    "api",
+    "worker",
+    "admin"
+  ],
+  "scripts": {
+    "build": "npm run build -w api && npm run build -w worker && npm run build -w admin",
+    "dev:api": "npm run dev -w api",
+    "dev:worker": "npm run dev -w worker",
+    "dev:admin": "npm run dev -w admin",
+    "migrate": "npm run migrate -w api",
+    "test": "npm run test -w api",
+    "compose:up": "docker compose up -d --build",
+    "compose:down": "docker compose down",
+    "compose:db": "docker compose up -d postgres redis",
+    "seed:catalog": "tsx scripts/seed-catalog.ts",
+    "seed:fresh-cursors": "tsx scripts/seed-fresh-cursors.ts",
+    "seed:samples": "tsx scripts/seed-sample-orders.ts",
+    "seed:more": "tsx scripts/seed-more-orders.ts",
+    "sync:shipbob": "tsx scripts/sync-shipbob.ts",
+    "sync:klb": "tsx scripts/sync-klb.ts",
+    "sync:trackingmore": "tsx scripts/sync-trackingmore.ts",
+    "sync:notifications": "tsx scripts/sync-notifications.ts",
+    "sync:stalled": "tsx scripts/sync-stalled.ts",
+    "sync:retention": "tsx scripts/sync-retention.ts",
+    "sync:reconcile": "tsx scripts/sync-reconcile.ts",
+    "sync:products": "tsx scripts/sync-products.ts"
+  },
+  "devDependencies": {
+    "tsx": "^4.19.4"
+  },
+  "engines": {
+    "node": ">=20"
+  }
+}
+

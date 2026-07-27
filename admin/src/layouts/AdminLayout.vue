@@ -25,7 +25,12 @@ async function onLogout() {
   <div class="app-shell">
     <aside class="sidebar">
       <div class="brand">PFM Tracking</div>
+      <RouterLink class="nav-link" to="/dashboard">Dashboard</RouterLink>
       <RouterLink class="nav-link" to="/shipments">Shipments</RouterLink>
+      <RouterLink class="nav-link" to="/sync-runs">Sync runs</RouterLink>
+      <RouterLink class="nav-link" to="/reports">Reports</RouterLink>
+      <RouterLink class="nav-link" to="/status-mappings">Status maps</RouterLink>
+      <RouterLink class="nav-link" to="/data-quality">Data quality</RouterLink>
       <RouterLink v-if="user?.role === 'admin'" class="nav-link" to="/users">Users</RouterLink>
     </aside>
     <div class="main">

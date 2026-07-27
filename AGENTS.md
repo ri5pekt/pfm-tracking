@@ -89,6 +89,7 @@ Do **not** emit on every InTransit scan — only meaningful transitions.
 - Redact auth headers in `api_call_log`
 - Do not log full street addresses to public APIs
 - Prefer fixtures in `examples/` over live API calls while scaffolding
+- Production VPS: `ssh root@2.24.104.137` — domain **`tracking.particleformen.com`** — see [`docs/ops/vps.md`](docs/ops/vps.md)
 
 ## When stuck
 

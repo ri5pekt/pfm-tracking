@@ -4,34 +4,28 @@ Exit criterion: a domestic ShipBob order shows a live timeline on our domain (po
 
 ## Jobs
 
-### `shipbob.orders.sync` (15–30 min)
-- `GET https://api.shipbob.com/1.0/order?Limit=250&…` with `Authorization: Bearer` + `shipbob_channel_id`
+### `shipbob.orders.sync` + `shipbob.tracking.poll` (every 20 min via worker `shipbob.sync`)
+- Implemented in `scripts/sync-shipbob.ts` (`npm run sync:shipbob`)
 - Watermark via `sync_cursors` (15-min overlap); only advance on full success
 - Upsert `orders`, `shipments`, `shipment_items`
-- Capture `tracking.tracking_number` / carrier when present
-
-### `shipbob.tracking.poll` (15–30 min)
-- Select open ShipBob shipments with a tracking number
-- Chunk 25 IDs →  
-  `GET /2026-07/shipments-tracking?ShipmentIds=a&ShipmentIds=b`  
-  (**repeated params**, never comma-separated)
-- Upsert EDD, tracking_url, last_mile, POD fields on `shipments`
-- Append new `history[]` rows into `tracking_events` (`event_hash` dedupe)
-- Normalize status; emit Klaviyo only later (Phase 3) — optional stub ok
+- Poll open ShipBob shipments in chunks of 25 (`ShipmentIds=` repeated params)
+- Normalize status; Klaviyo later (Phase 3)
 
 ## Public
-- [ ] `GET /t/:token` — tracking page JSON/HTML from DB only (no live ShipBob on render)
-- [ ] `POST /lookup` — order number + email/postcode; generic failure; rate limit
-- [ ] Timeline UI: status, events, locations, carrier link, EDD
+- [x] `GET /t/:token` — tracking page JSON/HTML from DB only (no live ShipBob on render)
+- [x] `POST /lookup` — order number + email/postcode; generic failure; rate limit
+- [x] Timeline UI: status, events, locations, carrier link, EDD
 
 ## Admin
-- [ ] Shipments list matching `docs/ui-references/` (status tabs, search, latest event + location on row)
-- [ ] Right-hand slide-over detail (timeline, shipment fields, “View tracking page”)
-- [ ] Search by order # / email / tracking #
-- [ ] Raw event payload tab / section on the slide-over
+- [x] Shipments list matching `docs/ui-references/` (status tabs, search, latest event + location on row)
+- [x] Right-hand slide-over detail (timeline, shipment fields, “View tracking page”)
+- [x] Search by order # / email / tracking #
+- [x] Raw event payload tab / section on the slide-over
 
-## Fixtures
-Use `examples/shipbob/*.json` for unit/integration tests before hitting live APIs.
+## Fixtures / sample seed
+- [x] One-shot `npm run seed:samples` — 50 ShipBob + 50 KLB (≥14d) with timelines
+- [x] `npm run sync:trackingmore` catch-up + worker `trackingmore.poll` every 15m (TM lag after create)
+- Use `examples/shipbob/*.json` for unit/integration tests before hitting live APIs
 
 ## References
 - `docs/dev-plan.md` §5.1, §6, §7

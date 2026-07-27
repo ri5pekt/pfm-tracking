@@ -1,0 +1,136 @@
+# Production stack for tracking.particleformen.com
+# Usage on VPS:
+#   cd /var/www/pfm-tracking
+#   docker compose -f docker-compose.prod.yml up -d --build
+#   docker compose -f docker-compose.prod.yml run --rm migrate
+#   docker compose -f docker-compose.prod.yml run --rm jobs npx tsx scripts/seed-catalog.ts
+#   docker compose -f docker-compose.prod.yml run --rm jobs npx tsx scripts/seed-fresh-cursors.ts
+#   docker compose -f docker-compose.prod.yml up -d worker
+
+services:
+  postgres:
+    image: postgres:16-alpine
+    restart: unless-stopped
+    environment:
+      POSTGRES_USER: pfm
+      POSTGRES_PASSWORD: ${POSTGRES_PASSWORD:-pfm_change_me}
+      POSTGRES_DB: pfm_tracking
+    volumes:
+      - pfm_pg:/var/lib/postgresql/data
+    healthcheck:
+      test: ['CMD-SHELL', 'pg_isready -U pfm -d pfm_tracking']
+      interval: 5s
+      timeout: 5s
+      retries: 20
+
+  redis:
+    image: redis:7-alpine
+    restart: unless-stopped
+    command: ['redis-server', '--appendonly', 'yes']
+    volumes:
+      - pfm_redis:/data
+    healthcheck:
+      test: ['CMD', 'redis-cli', 'ping']
+      interval: 5s
+      timeout: 3s
+      retries: 20
+
+  migrate:
+    build:
+      context: .
+      dockerfile: api/Dockerfile
+    env_file: .env
+    environment:
+      DATABASE_URL: postgres://pfm:${POSTGRES_PASSWORD:-pfm_change_me}@postgres:5432/pfm_tracking
+    depends_on:
+      postgres:
+        condition: service_healthy
+    command: ['node', 'dist/db/migrate.js']
+    profiles: ['tools']
+    restart: 'no'
+
+  # One-off job runner (seed catalog / cursors / manual sync)
+  jobs:
+    build:
+      context: .
+      dockerfile: worker/Dockerfile
+    env_file: .env
+    environment:
+      DATABASE_URL: postgres://pfm:${POSTGRES_PASSWORD:-pfm_change_me}@postgres:5432/pfm_tracking
+      REDIS_URL: redis://redis:6379
+    depends_on:
+      postgres:
+        condition: service_healthy
+    profiles: ['tools']
+    working_directory: /app
+    entrypoint: ['npx', 'tsx']
+    restart: 'no'
+
+  api:
+    build:
+      context: .
+      dockerfile: api/Dockerfile
+      args:
+        GIT_SHA: ${GIT_SHA:-dev}
+        APP_VERSION: ${APP_VERSION:-0.1.0}
+    restart: unless-stopped
+    env_file: .env
+    environment:
+      DATABASE_URL: postgres://pfm:${POSTGRES_PASSWORD:-pfm_change_me}@postgres:5432/pfm_tracking
+      REDIS_URL: redis://redis:6379
+      PORT: '3000'
+      PUBLIC_BASE_URL: https://tracking.particleformen.com
+    depends_on:
+      postgres:
+        condition: service_healthy
+      redis:
+        condition: service_healthy
+
+  worker:
+    build:
+      context: .
+      dockerfile: worker/Dockerfile
+      args:
+        GIT_SHA: ${GIT_SHA:-dev}
+        APP_VERSION: ${APP_VERSION:-0.1.0}
+    restart: unless-stopped
+    env_file: .env
+    environment:
+      DATABASE_URL: postgres://pfm:${POSTGRES_PASSWORD:-pfm_change_me}@postgres:5432/pfm_tracking
+      REDIS_URL: redis://redis:6379
+      PUBLIC_BASE_URL: https://tracking.particleformen.com
+    depends_on:
+      postgres:
+        condition: service_healthy
+      redis:
+        condition: service_healthy
+      api:
+        condition: service_started
+
+  admin:
+    build:
+      context: .
+      dockerfile: admin/Dockerfile
+    restart: unless-stopped
+    depends_on:
+      - api
+
+  caddy:
+    image: caddy:2.9-alpine
+    restart: unless-stopped
+    ports:
+      - '80:80'
+      - '443:443'
+      - '443:443/udp'
+    volumes:
+      - ./deploy/Caddyfile:/etc/caddy/Caddyfile:ro
+      - caddy_data:/data
+      - caddy_config:/config
+    depends_on:
+      - admin
+
+volumes:
+  pfm_pg:
+  pfm_redis:
+  caddy_data:
+  caddy_config:

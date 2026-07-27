@@ -1,0 +1,24 @@
+# Temporary Caddy + static welcome for tracking.particleformen.com
+# Full app stack remains in ../docker-compose.yml — swap Caddyfile to reverse_proxy later.
+#
+# On VPS:
+#   cd /var/www/pfm-tracking
+#   docker compose -f deploy/docker-compose.caddy.yml up -d
+
+services:
+  caddy:
+    image: caddy:2.9-alpine
+    restart: unless-stopped
+    ports:
+      - "80:80"
+      - "443:443"
+      - "443:443/udp"
+    volumes:
+      - ./Caddyfile:/etc/caddy/Caddyfile:ro
+      - ./welcome:/srv:ro
+      - caddy_data:/data
+      - caddy_config:/config
+
+volumes:
+  caddy_data:
+  caddy_config:

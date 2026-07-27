@@ -8,3 +8,6 @@ coverage/
 .DS_Store
 data/
 tmp/
+exports/
+examples/seed/*.json
+

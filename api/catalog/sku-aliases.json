@@ -1,0 +1,4 @@
+{
+  "_comment": "Map warehouse/ShipBob/KLB SKUs → catalog products.sku from products.json. Example: \"6005.0003\": \"00860012469796\".",
+  "aliases": {}
+}

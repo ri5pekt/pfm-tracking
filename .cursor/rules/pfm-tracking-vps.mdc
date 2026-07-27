@@ -1,0 +1,13 @@
+---
+description: Production VPS connection for PFM Tracking
+alwaysApply: true
+---
+
+# PFM Tracking — VPS
+
+- Production Hostinger VPS: **`ssh root@2.24.104.137`** (hostname `pfm`)
+- Public domain: **`https://tracking.particleformen.com`** (Caddy + Let's Encrypt live)
+- Deploy path: `/var/www/pfm-tracking` — edge files in [`deploy/`](deploy/)
+- `PUBLIC_BASE_URL=https://tracking.particleformen.com`
+- Details: [`docs/ops/vps.md`](docs/ops/vps.md)
+- Never commit root passwords or `.env` secrets

@@ -1,0 +1,11 @@
+{
+  "_comment": "Warehouse SKUs that are packaging/inserts (not sellable products). Hidden on the public tracking page. Names from ShipBob product catalog where known.",
+  "packaging": {
+    "6005.0003": "Branded one-unit shipper box",
+    "6005.0003B": "One-unit shipper box (part B)",
+    "6005.0002": "Particle mailing box",
+    "6003.0002": "Particle brochure",
+    "6003.0004": "Packaging insert",
+    "6003.0005": "Packaging insert"
+  }
+}
