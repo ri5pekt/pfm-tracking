@@ -1,7 +1,14 @@
 import type { Db } from '../../db/pool.js';
 import { looksLikeDhlEcommerce } from '../klb/client.js';
 import { applyTrackingMoreTimeline } from '../klb/ingest.js';
-import { TrackingMoreClient, trackingMoreCheckpoints } from './client.js';
+import {
+  courierHintForShipment,
+  isTrackingMoreRateLimitError,
+  TM_BATCH_MAX,
+  TrackingMoreClient,
+  trackingMoreCheckpoints,
+  type TrackingMoreCreateItem,
+} from './client.js';
 
 const TERMINAL = new Set(['DELIVERED', 'CANCELLED', 'RETURNED_TO_SENDER']);
 
@@ -12,28 +19,37 @@ export type TrackingMorePollResult = {
   withCheckpoints: number;
   stillPending: number;
   errors: number;
+  registered: number;
+  stoppedForRateLimit: boolean;
   items: Array<{
     shipmentId: string;
     orderId: string;
     orderNumber: string | null;
     trackingNumber: string;
     eventsInserted: number;
-    action: 'updated' | 'unchanged' | 'error';
+    action: 'updated' | 'unchanged' | 'error' | 'skipped';
     detail?: string;
   }>;
 };
 
+function chunk<T>(items: T[], size: number): T[][] {
+  const out: T[][] = [];
+  for (let i = 0; i < items.length; i += size) out.push(items.slice(i, i + size));
+  return out;
+}
+
 /**
- * Re-poll TrackingMore for open KLB (and any aggregator=trackingmore) shipments.
- * TrackingMore often returns pending/empty history for minutes–hours after create —
- * this is the durable catch-up path (also used by the worker).
+ * Re-poll TrackingMore for open aggregator=trackingmore shipments.
+ * Respects TM rate limits: batch get/create (≤40), client-side pacing,
+ * and abort the rest of the cycle on 429 (120s cooldown).
  */
 export async function pollOpenTrackingMoreShipments(
   db: Db,
   tm: TrackingMoreClient,
   opts?: { limit?: number; includeTerminal?: boolean },
 ): Promise<TrackingMorePollResult> {
-  const limit = opts?.limit ?? 200;
+  // Keep cycles small enough that we stay under ~10 get-req/s with batching.
+  const limit = opts?.limit ?? 80;
   const { rows } = await db.query<{
     id: string;
     order_id: string;
@@ -54,9 +70,12 @@ export async function pollOpenTrackingMoreShipments(
        AND (
          $2::boolean
          OR s.internal_status NOT IN ('DELIVERED','CANCELLED','RETURNED_TO_SENDER')
-         OR (SELECT count(*) FROM tracking_events te WHERE te.shipment_id = s.id) <= 1
        )
-     ORDER BY s.updated_at ASC
+     ORDER BY
+       CASE WHEN s.aggregator_id IS NULL THEN 0 ELSE 1 END,
+       (SELECT count(*) FROM tracking_events te WHERE te.shipment_id = s.id) ASC,
+       s.last_event_at NULLS FIRST,
+       s.updated_at ASC
      LIMIT $1`,
     [limit, opts?.includeTerminal ?? false],
   );
@@ -68,103 +87,124 @@ export async function pollOpenTrackingMoreShipments(
     withCheckpoints: 0,
     stillPending: 0,
     errors: 0,
+    registered: 0,
+    stoppedForRateLimit: false,
     items: [],
   };
 
-  for (const row of rows) {
-    try {
-      const courierHint =
-        row.carrier_code === 'dhl_ecs' || looksLikeDhlEcommerce(row.tracking_number)
-          ? 'dhlglobalmail'
-          : row.carrier_code === 'usps'
-            ? 'usps'
-            : null;
+  try {
+    for (const batch of chunk(rows, TM_BATCH_MAX)) {
+      const numbers = batch.map((r) => r.tracking_number);
+      let got = await tm.getTrackings(numbers);
 
-      // Prefer get; if expired/notfound and we have aggregator id, retrack then get again
-      let tracking = await tm.getTracking(row.tracking_number);
-      const status = tracking?.delivery_status?.toLowerCase() ?? '';
-      if (
-        row.aggregator_id &&
-        (status === 'expired' || status === 'notfound' || status === 'pending')
-      ) {
-        try {
-          await tm.retrackById(String(row.aggregator_id));
-          await new Promise((r) => setTimeout(r, 500));
-          tracking = (await tm.getTracking(row.tracking_number)) ?? tracking;
-        } catch {
-          // retrack only allowed for expired/notfound — ignore
+      const missing = batch.filter((r) => !got.has(r.tracking_number));
+      if (missing.length > 0) {
+        const createItems: TrackingMoreCreateItem[] = missing.map((r) => ({
+          tracking_number: r.tracking_number,
+          courier_code: courierHintForShipment(
+            r.tracking_number,
+            r.carrier_code,
+            looksLikeDhlEcommerce,
+          ),
+        }));
+        const created = await tm.createTrackingsBatch(createItems);
+        result.registered += created.success.length;
+        // already-exists etc. still count as registered enough to get
+        const retryNums = missing.map((r) => r.tracking_number);
+        const got2 = await tm.getTrackings(retryNums);
+        for (const [tn, t] of got2) got.set(tn, t);
+      }
+
+      // Optional retrack for expired/notfound with known aggregator id (one at a time, paced)
+      for (const row of batch) {
+        const tracking = got.get(row.tracking_number);
+        if (!tracking) {
+          result.errors += 1;
+          result.items.push({
+            shipmentId: row.id,
+            orderId: row.order_id,
+            orderNumber: row.order_number,
+            trackingNumber: row.tracking_number,
+            eventsInserted: 0,
+            action: 'error',
+            detail: 'no_tracking_payload',
+          });
+          continue;
+        }
+
+        const status = tracking.delivery_status?.toLowerCase() ?? '';
+        if (
+          row.aggregator_id &&
+          (status === 'expired' || status === 'notfound')
+        ) {
+          try {
+            await tm.retrackById(String(row.aggregator_id));
+            const again = await tm.getTracking(row.tracking_number);
+            if (again) got.set(row.tracking_number, again);
+          } catch (err) {
+            if (isTrackingMoreRateLimitError(err)) throw err;
+            // retrack not allowed / soft fail
+          }
+        }
+
+        const finalTracking = got.get(row.tracking_number) ?? tracking;
+        const checkpoints = trackingMoreCheckpoints(finalTracking);
+        if (checkpoints.length > 0) result.withCheckpoints += 1;
+        else if (['pending', 'notfound'].includes((finalTracking.delivery_status ?? '').toLowerCase())) {
+          result.stillPending += 1;
+        }
+
+        if (checkpoints.length > 0) {
+          await db.query(`UPDATE shipments SET status_source_event_id = NULL WHERE id = $1`, [
+            row.id,
+          ]);
+          await db.query(
+            `DELETE FROM tracking_events
+             WHERE shipment_id = $1
+               AND source = 'trackingmore'
+               AND description LIKE 'TrackingMore status:%'`,
+            [row.id],
+          );
+        }
+
+        const applied = await applyTrackingMoreTimeline(
+          db,
+          row.id,
+          row.order_id,
+          finalTracking,
+        );
+        result.refreshed += 1;
+        result.eventsInserted += applied.eventsInserted;
+
+        if (applied.eventsInserted > 0) {
+          result.items.push({
+            shipmentId: row.id,
+            orderId: row.order_id,
+            orderNumber: row.order_number,
+            trackingNumber: row.tracking_number,
+            eventsInserted: applied.eventsInserted,
+            action: 'updated',
+            detail: `events+${applied.eventsInserted}`,
+          });
         }
       }
-
-      // If never registered successfully, try ensure again
-      if (!tracking) {
-        tracking = await tm.ensureAndGet(row.tracking_number, courierHint);
-      }
-
-      if (!tracking) {
-        result.errors += 1;
-        result.items.push({
-          shipmentId: row.id,
-          orderId: row.order_id,
-          orderNumber: row.order_number,
-          trackingNumber: row.tracking_number,
-          eventsInserted: 0,
-          action: 'error',
-          detail: 'no_tracking_payload',
-        });
-        continue;
-      }
-
-      const checkpoints = trackingMoreCheckpoints(tracking);
-      if (checkpoints.length > 0) result.withCheckpoints += 1;
-      else if (['pending', 'notfound'].includes((tracking.delivery_status ?? '').toLowerCase())) {
-        result.stillPending += 1;
-      }
-
-      // Clear FK before removing seed-era synthetic pending placeholders.
-      if (checkpoints.length > 0) {
-        await db.query(`UPDATE shipments SET status_source_event_id = NULL WHERE id = $1`, [row.id]);
-        await db.query(
-          `DELETE FROM tracking_events
-           WHERE shipment_id = $1
-             AND source = 'trackingmore'
-             AND description LIKE 'TrackingMore status:%'`,
-          [row.id],
-        );
-      }
-
-      const applied = await applyTrackingMoreTimeline(db, row.id, row.order_id, tracking);
-      result.refreshed += 1;
-      result.eventsInserted += applied.eventsInserted;
-
-      if (applied.eventsInserted > 0) {
-        result.items.push({
-          shipmentId: row.id,
-          orderId: row.order_id,
-          orderNumber: row.order_number,
-          trackingNumber: row.tracking_number,
-          eventsInserted: applied.eventsInserted,
-          action: 'updated',
-          detail: `events+${applied.eventsInserted}`,
-        });
-      }
-
-      // Avoid hammering rate limits (TM ~10 req/s)
-      await new Promise((r) => setTimeout(r, 150));
-    } catch (err) {
-      result.errors += 1;
-      const msg = err instanceof Error ? err.message : String(err);
-      console.warn(`[trackingmore.poll] ${row.tracking_number}:`, err);
-      result.items.push({
-        shipmentId: row.id,
-        orderId: row.order_id,
-        orderNumber: row.order_number,
-        trackingNumber: row.tracking_number,
-        eventsInserted: 0,
-        action: 'error',
-        detail: msg.slice(0, 500),
-      });
     }
+  } catch (err) {
+    if (isTrackingMoreRateLimitError(err)) {
+      result.stoppedForRateLimit = true;
+      console.warn(`[trackingmore.poll] stopped early: ${err.message}`);
+      result.items.push({
+        shipmentId: '',
+        orderId: '',
+        orderNumber: null,
+        trackingNumber: '',
+        eventsInserted: 0,
+        action: 'skipped',
+        detail: err.message.slice(0, 500),
+      });
+      return result;
+    }
+    throw err;
   }
 
   return result;

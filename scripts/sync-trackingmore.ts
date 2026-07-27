@@ -30,8 +30,9 @@ async function main(): Promise<void> {
   console.log(`=== ${JOB} ===`);
   try {
     const result = await pollOpenTrackingMoreShipments(db, tm, {
-      limit: 200,
-      includeTerminal: true, // also refresh thin histories from seed
+      limit: 80,
+      // Prod: don't re-poll terminals every cycle (burns quota on seed backlog)
+      includeTerminal: false,
     });
     console.log(result);
 
@@ -50,11 +51,18 @@ async function main(): Promise<void> {
 
     await touchSyncCursor(db, JOB);
     await finishIngestionRun(db, runId, {
-      status: result.errors > 0 ? 'partial' : 'success',
+      status: result.errors > 0 || result.stoppedForRateLimit ? 'partial' : 'success',
       recordsSeen: result.considered,
       recordsUpserted: result.refreshed,
       eventsAppended: result.eventsInserted,
-      errors: result.errors > 0 ? { errors: result.errors } : undefined,
+      errors:
+        result.errors > 0 || result.stoppedForRateLimit
+          ? {
+              errors: result.errors,
+              stoppedForRateLimit: result.stoppedForRateLimit,
+              registered: result.registered,
+            }
+          : undefined,
     });
 
     const summary = await db.query(`

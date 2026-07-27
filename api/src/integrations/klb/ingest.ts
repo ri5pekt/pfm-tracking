@@ -14,7 +14,10 @@ import {
   type KlbShippingOrder,
 } from '../klb/client.js';
 import {
+  courierHintForShipment,
+  isTrackingMoreRateLimitError,
   parseTrackingMoreDate,
+  TM_BATCH_MAX,
   trackingMoreCheckpoints,
   type TrackingMoreClient,
   type TrackingMoreTracking,
@@ -193,10 +196,105 @@ export async function enrichKlbWithTrackingMore(
     const result = await applyTrackingMoreTimeline(db, shipmentId, orderId, tracking);
     return { ...result, ok: true };
   } catch (err) {
+    if (isTrackingMoreRateLimitError(err)) throw err;
     return {
       eventsInserted: 0,
       ok: false,
       error: err instanceof Error ? err.message : String(err),
     };
   }
+}
+
+export async function enrichKlbShipmentsWithTrackingMoreBatch(
+  db: Db,
+  tm: TrackingMoreClient,
+  rows: Array<{
+    id: string;
+    order_id: string;
+    tracking_number: string;
+    carrier_code: string | null;
+    order_number: string | null;
+  }>,
+): Promise<{
+  registered: number;
+  eventsInserted: number;
+  stoppedForRateLimit: boolean;
+  items: Array<{
+    shipmentId: string;
+    orderId: string;
+    orderNumber: string | null;
+    trackingNumber: string;
+    eventsInserted: number;
+    error?: string;
+  }>;
+}> {
+  const items: Array<{
+    shipmentId: string;
+    orderId: string;
+    orderNumber: string | null;
+    trackingNumber: string;
+    eventsInserted: number;
+    error?: string;
+  }> = [];
+  let registered = 0;
+  let eventsInserted = 0;
+
+  try {
+    for (let i = 0; i < rows.length; i += TM_BATCH_MAX) {
+      const batch = rows.slice(i, i + TM_BATCH_MAX);
+      const createItems = batch.map((r) => ({
+        tracking_number: r.tracking_number,
+        courier_code: courierHintForShipment(
+          r.tracking_number,
+          r.carrier_code,
+          looksLikeDhlEcommerce,
+        ),
+      }));
+
+      const created = await tm.createTrackingsBatch(createItems);
+      registered += created.success.length;
+
+      // Persist TM ids when batch create returns them
+      for (const s of created.success) {
+        if (!s.tracking_number || s.id == null) continue;
+        await db.query(
+          `UPDATE shipments SET aggregator_id = COALESCE($2, aggregator_id), updated_at = now()
+           WHERE tracking_number = $1 AND source = 'klb'`,
+          [s.tracking_number, String(s.id)],
+        );
+      }
+
+      const got = await tm.getTrackings(batch.map((r) => r.tracking_number));
+      for (const row of batch) {
+        const tracking = got.get(row.tracking_number);
+        if (!tracking) {
+          items.push({
+            shipmentId: row.id,
+            orderId: row.order_id,
+            orderNumber: row.order_number,
+            trackingNumber: row.tracking_number,
+            eventsInserted: 0,
+            error: 'no_tracking_payload',
+          });
+          continue;
+        }
+        const applied = await applyTrackingMoreTimeline(db, row.id, row.order_id, tracking);
+        eventsInserted += applied.eventsInserted;
+        items.push({
+          shipmentId: row.id,
+          orderId: row.order_id,
+          orderNumber: row.order_number,
+          trackingNumber: row.tracking_number,
+          eventsInserted: applied.eventsInserted,
+        });
+      }
+    }
+  } catch (err) {
+    if (isTrackingMoreRateLimitError(err)) {
+      return { registered, eventsInserted, stoppedForRateLimit: true, items };
+    }
+    throw err;
+  }
+
+  return { registered, eventsInserted, stoppedForRateLimit: false, items };
 }

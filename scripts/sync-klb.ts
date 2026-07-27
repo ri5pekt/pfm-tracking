@@ -7,10 +7,10 @@ import { loadEnv } from '../api/src/config.js';
 import { createPool } from '../api/src/db/pool.js';
 import { KlbClient } from '../api/src/integrations/klb/client.js';
 import {
-  enrichKlbWithTrackingMore,
   flattenKlbCandidates,
   ingestKlbShipment,
   pickKlbOrderNumber,
+  enrichKlbShipmentsWithTrackingMoreBatch,
 } from '../api/src/integrations/klb/ingest.js';
 import { TrackingMoreClient } from '../api/src/integrations/trackingmore/client.js';
 import {
@@ -131,35 +131,32 @@ async function main(): Promise<void> {
     );
 
     console.log(`[klb] tm enrich queue=${pending.rows.length} (cap ${MAX_TM_ENRICH_PER_RUN})`);
-    for (const row of pending.rows) {
-      const enrich = await enrichKlbWithTrackingMore(
-        db,
-        tm,
-        row.id,
-        row.order_id,
-        row.tracking_number,
-        row.carrier_code,
-      );
-      registered += 1;
-      eventsAppended += enrich.eventsInserted;
-      if (!enrich.ok && enrich.error) {
-        errors.push(`${row.tracking_number}: ${enrich.error}`);
+
+    const enrich = await enrichKlbShipmentsWithTrackingMoreBatch(db, tm, pending.rows);
+    registered += enrich.registered;
+    eventsAppended += enrich.eventsInserted;
+    if (enrich.stoppedForRateLimit) {
+      errors.push('TrackingMore rate limit — enrich stopped early (120s cooldown)');
+    }
+    for (const item of enrich.items) {
+      if (item.error) {
+        errors.push(`${item.trackingNumber}: ${item.error}`);
         items.push({
-          orderNumber: row.order_number,
-          orderId: row.order_id,
-          shipmentId: row.id,
-          trackingNumber: row.tracking_number,
+          orderNumber: item.orderNumber,
+          orderId: item.orderId,
+          shipmentId: item.shipmentId,
+          trackingNumber: item.trackingNumber,
           action: 'error',
-          detail: `tm_enrich: ${enrich.error}`.slice(0, 500),
+          detail: item.error.slice(0, 500),
         });
-      } else if (enrich.eventsInserted > 0) {
+      } else {
         items.push({
-          orderNumber: row.order_number,
-          orderId: row.order_id,
-          shipmentId: row.id,
-          trackingNumber: row.tracking_number,
+          orderNumber: item.orderNumber,
+          orderId: item.orderId,
+          shipmentId: item.shipmentId,
+          trackingNumber: item.trackingNumber,
           action: 'updated',
-          detail: `tm_enrich events+${enrich.eventsInserted}`,
+          detail: item.eventsInserted ? `tm_events+${item.eventsInserted}` : 'tm_registered',
         });
       }
     }

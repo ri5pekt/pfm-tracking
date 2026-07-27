@@ -44,6 +44,19 @@ Fix (in `scripts/sync-shipbob.ts`):
 
 KLB already uses a trailing ship-date window; keep `KLB_WINDOW_DAYS` wide enough for weekend/next-day label uploads (recommend **7–30**, not `0` after the initial fresh-start cutover).
 
+## TrackingMore rate limits
+
+Documented V4 limits we enforce in `api/src/integrations/trackingmore/client.ts`:
+
+| Lane | Endpoints | Cap we pace to |
+| :--- | :--- | :--- |
+| Realtime | `POST /trackings/create`, courier detect | ~3 req/s (`350ms` gap) |
+| Standard | `GET /trackings/get`, `POST /trackings/batch`, retrack | ~10 req/s (`110ms` gap) |
+
+- Batch create/get use **≤40** numbers per call.
+- On **HTTP 429**: stop the cycle and cool down **120 seconds** before any further TM calls (per TrackingMore policy).
+- Poll defaults: open shipments only, **80**/cycle, missing numbers registered via batch create then re-fetched.
+
 ## Intervals (adjust after watching logs)
 
 | Job | Interval |
