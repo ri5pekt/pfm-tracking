@@ -5,6 +5,7 @@ COPY api/package.json ./api/
 COPY worker/package.json ./worker/
 COPY admin/package.json ./admin/
 RUN npm install --workspace=@pfm/admin
+COPY tsconfig.base.json ./
 COPY admin ./admin
 WORKDIR /app/admin
 RUN npm run build
