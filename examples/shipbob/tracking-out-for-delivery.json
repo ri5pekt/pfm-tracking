@@ -1,0 +1,135 @@
+{
+  "tracking_number": "CR010921150876",
+  "shipment_id": 388383366,
+  "carrier": "Cirro",
+  "service": "REGNJ",
+  "last_mile_carrier": {
+    "carrier": "Cirro",
+    "service": "REGNJ",
+    "tracking_number": "CR010921150876",
+    "tracking_url": "https://www.cirrotrack.com/parcelTracking?id=CR010921150876"
+  },
+  "current_status": "OutForDelivery",
+  "current_substatus_code": "OutForDelivery_001",
+  "current_substatus": "Out for Delivery",
+  "tracking_url": "https://www.cirrotrack.com/parcelTracking?id=CR010921150876",
+  "edd": "2026-07-29T16:09:20Z",
+  "edd_source": "carrier",
+  "current_timestamp": "2026-07-26T23:28:27Z",
+  "delivery_signed_by": "",
+  "proof_of_delivery_urls": [],
+  "history": [
+    {
+      "status": "OutForDelivery",
+      "substatus": "Out for Delivery",
+      "substatus_code": "OutForDelivery_001",
+      "substatus_message": "Out for Delivery",
+      "timestamp": "2026-07-26T23:28:27Z",
+      "address": {
+        "location": "Greensburg",
+        "city": "Ambridge",
+        "state": "PA",
+        "postal_code": "15003",
+        "country": "",
+        "latitude": 40.5989009,
+        "longitude": -80.2153998
+      }
+    },
+    {
+      "status": "InTransit",
+      "substatus": "Arrival scan",
+      "substatus_code": "InTransit_002",
+      "substatus_message": "Arrived at GOFO Delivery Station",
+      "timestamp": "2026-07-26T21:47:54Z",
+      "address": {
+        "location": "Ambridge",
+        "city": "Ambridge",
+        "state": "PA",
+        "postal_code": "15003",
+        "country": "",
+        "latitude": 40.5989009,
+        "longitude": -80.2153998
+      }
+    },
+    {
+      "status": "InTransit",
+      "substatus": "In Transit",
+      "substatus_code": "InTransit_001",
+      "substatus_message": "In Transit to Next Facility",
+      "timestamp": "2026-07-26T20:46:38Z",
+      "address": {
+        "location": "Ambridge",
+        "city": "Ambridge",
+        "state": "PA",
+        "postal_code": "15003",
+        "country": "",
+        "latitude": 40.5989009,
+        "longitude": -80.2153998
+      }
+    },
+    {
+      "status": "InTransit",
+      "substatus": "Departure Scan",
+      "substatus_code": "InTransit_004",
+      "substatus_message": "Departed GOFO Regional Hub",
+      "timestamp": "2026-07-26T10:01:02Z",
+      "address": {
+        "location": "Carteret",
+        "city": "Carteret",
+        "state": "NJ",
+        "postal_code": "07008",
+        "country": "",
+        "latitude": 40.5864295,
+        "longitude": -74.226181
+      }
+    },
+    {
+      "status": "InTransit",
+      "substatus": "In Transit",
+      "substatus_code": "InTransit_001",
+      "substatus_message": "Loaded on Vehicle",
+      "timestamp": "2026-07-26T09:51:03Z",
+      "address": {
+        "location": "Carteret",
+        "city": "Carteret",
+        "state": "NJ",
+        "postal_code": "07008",
+        "country": "",
+        "latitude": 40.5864295,
+        "longitude": -74.226181
+      }
+    },
+    {
+      "status": "InTransit",
+      "substatus": "Arrival scan",
+      "substatus_code": "InTransit_002",
+      "substatus_message": "Arrived at GOFO Regional Hub",
+      "timestamp": "2026-07-26T05:06:50Z",
+      "address": {
+        "location": "Carteret",
+        "city": "Carteret",
+        "state": "NJ",
+        "postal_code": "07008",
+        "country": "United States",
+        "latitude": 40.5864295,
+        "longitude": -74.226181
+      }
+    },
+    {
+      "status": "PreTransit",
+      "substatus": "Info Received",
+      "substatus_code": "PreTransit_005",
+      "substatus_message": "Shipping Label Created",
+      "timestamp": "2026-07-25T16:09:20Z",
+      "address": {
+        "location": "Dayton, NJ, US",
+        "city": "Dayton",
+        "state": "NJ",
+        "postal_code": "08810",
+        "country": "US",
+        "latitude": null,
+        "longitude": null
+      }
+    }
+  ]
+}

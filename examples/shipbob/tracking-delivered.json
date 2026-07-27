@@ -1,0 +1,119 @@
+{
+  "tracking_number": "CR010921689329",
+  "shipment_id": 388185605,
+  "carrier": "Cirro",
+  "service": "REGSO",
+  "last_mile_carrier": {
+    "carrier": "Cirro",
+    "service": "REGSO",
+    "tracking_number": "CR010921689329",
+    "tracking_url": "https://www.cirrotrack.com/parcelTracking?id=CR010921689329"
+  },
+  "current_status": "Delivered",
+  "current_substatus_code": "Delivered_001",
+  "current_substatus": "Delivered",
+  "tracking_url": "https://www.cirrotrack.com/parcelTracking?id=CR010921689329",
+  "edd": "2026-07-27T20:43:42Z",
+  "edd_source": "carrier",
+  "current_timestamp": "2026-07-26T16:39:33Z",
+  "delivery_signed_by": "",
+  "proof_of_delivery_urls": [],
+  "history": [
+    {
+      "status": "Delivered",
+      "substatus": "Delivered",
+      "substatus_code": "Delivered_001",
+      "substatus_message": "Delivered, Door/Yard. For Delivery Issues & Tracking Support, Contact GOFO at +1 949 688-6032 or cs@mail.gofo.com",
+      "timestamp": "2026-07-26T16:39:33Z",
+      "address": {
+        "location": "Sanger",
+        "city": "Sanger",
+        "state": "TX",
+        "postal_code": "76266",
+        "country": "United States",
+        "latitude": 33.341778,
+        "longitude": -97.2005806
+      }
+    },
+    {
+      "status": "OutForDelivery",
+      "substatus": "Out for Delivery",
+      "substatus_code": "OutForDelivery_001",
+      "substatus_message": "Out for Delivery",
+      "timestamp": "2026-07-26T11:29:31Z",
+      "address": {
+        "location": "Sanger",
+        "city": "Coppell",
+        "state": "TX",
+        "postal_code": "75019",
+        "country": "",
+        "latitude": 32.9545687,
+        "longitude": -97.01500779999999
+      }
+    },
+    {
+      "status": "InTransit",
+      "substatus": "Arrival scan",
+      "substatus_code": "InTransit_002",
+      "substatus_message": "Arrived at GOFO Delivery Station",
+      "timestamp": "2026-07-26T09:27:28Z",
+      "address": {
+        "location": "Coppell",
+        "city": "Coppell",
+        "state": "TX",
+        "postal_code": "75019",
+        "country": "",
+        "latitude": 32.9545687,
+        "longitude": -97.01500779999999
+      }
+    },
+    {
+      "status": "InTransit",
+      "substatus": "In Transit",
+      "substatus_code": "InTransit_001",
+      "substatus_message": "Loaded on Vehicle",
+      "timestamp": "2026-07-26T08:35:46Z",
+      "address": {
+        "location": "Lewisville",
+        "city": "Lewisville",
+        "state": "TX",
+        "postal_code": "75067",
+        "country": "",
+        "latitude": 30.0688308,
+        "longitude": -96.1141262
+      }
+    },
+    {
+      "status": "InTransit",
+      "substatus": "Arrival scan",
+      "substatus_code": "InTransit_002",
+      "substatus_message": "Arrived at GOFO Regional Hub",
+      "timestamp": "2026-07-25T20:38:33Z",
+      "address": {
+        "location": "Lewisville",
+        "city": "Lewisville",
+        "state": "TX",
+        "postal_code": "75067",
+        "country": "United States",
+        "latitude": 30.0688308,
+        "longitude": -96.1141262
+      }
+    },
+    {
+      "status": "PreTransit",
+      "substatus": "Info Received",
+      "substatus_code": "PreTransit_005",
+      "substatus_message": "Shipping Label Created",
+      "timestamp": "2026-07-24T20:43:43Z",
+      "address": {
+        "location": "Grapevine, TX, US",
+        "city": "Grapevine",
+        "state": "TX",
+        "postal_code": "76051",
+        "country": "US",
+        "latitude": null,
+        "longitude": null
+      }
+    }
+  ]
+}

@@ -1,0 +1,597 @@
+[
+  {
+    "tracking_number": "CR010921689329",
+    "shipment_id": 388185605,
+    "carrier": "Cirro",
+    "service": "REGSO",
+    "last_mile_carrier": {
+      "carrier": "Cirro",
+      "service": "REGSO",
+      "tracking_number": "CR010921689329",
+      "tracking_url": "https://www.cirrotrack.com/parcelTracking?id=CR010921689329"
+    },
+    "current_status": "Delivered",
+    "current_substatus_code": "Delivered_001",
+    "current_substatus": "Delivered",
+    "tracking_url": "https://www.cirrotrack.com/parcelTracking?id=CR010921689329",
+    "edd": "2026-07-27T20:43:42Z",
+    "edd_source": "carrier",
+    "current_timestamp": "2026-07-26T16:39:33Z",
+    "delivery_signed_by": "",
+    "proof_of_delivery_urls": [],
+    "history": [
+      {
+        "status": "Delivered",
+        "substatus": "Delivered",
+        "substatus_code": "Delivered_001",
+        "substatus_message": "Delivered, Door/Yard. For Delivery Issues & Tracking Support, Contact GOFO at +1 949 688-6032 or cs@mail.gofo.com",
+        "timestamp": "2026-07-26T16:39:33Z",
+        "address": {
+          "location": "Sanger",
+          "city": "Sanger",
+          "state": "TX",
+          "postal_code": "76266",
+          "country": "United States",
+          "latitude": 33.341778,
+          "longitude": -97.2005806
+        }
+      },
+      {
+        "status": "OutForDelivery",
+        "substatus": "Out for Delivery",
+        "substatus_code": "OutForDelivery_001",
+        "substatus_message": "Out for Delivery",
+        "timestamp": "2026-07-26T11:29:31Z",
+        "address": {
+          "location": "Sanger",
+          "city": "Coppell",
+          "state": "TX",
+          "postal_code": "75019",
+          "country": "",
+          "latitude": 32.9545687,
+          "longitude": -97.01500779999999
+        }
+      },
+      {
+        "status": "InTransit",
+        "substatus": "Arrival scan",
+        "substatus_code": "InTransit_002",
+        "substatus_message": "Arrived at GOFO Delivery Station",
+        "timestamp": "2026-07-26T09:27:28Z",
+        "address": {
+          "location": "Coppell",
+          "city": "Coppell",
+          "state": "TX",
+          "postal_code": "75019",
+          "country": "",
+          "latitude": 32.9545687,
+          "longitude": -97.01500779999999
+        }
+      },
+      {
+        "status": "InTransit",
+        "substatus": "In Transit",
+        "substatus_code": "InTransit_001",
+        "substatus_message": "Loaded on Vehicle",
+        "timestamp": "2026-07-26T08:35:46Z",
+        "address": {
+          "location": "Lewisville",
+          "city": "Lewisville",
+          "state": "TX",
+          "postal_code": "75067",
+          "country": "",
+          "latitude": 30.0688308,
+          "longitude": -96.1141262
+        }
+      },
+      {
+        "status": "InTransit",
+        "substatus": "Arrival scan",
+        "substatus_code": "InTransit_002",
+        "substatus_message": "Arrived at GOFO Regional Hub",
+        "timestamp": "2026-07-25T20:38:33Z",
+        "address": {
+          "location": "Lewisville",
+          "city": "Lewisville",
+          "state": "TX",
+          "postal_code": "75067",
+          "country": "United States",
+          "latitude": 30.0688308,
+          "longitude": -96.1141262
+        }
+      },
+      {
+        "status": "PreTransit",
+        "substatus": "Info Received",
+        "substatus_code": "PreTransit_005",
+        "substatus_message": "Shipping Label Created",
+        "timestamp": "2026-07-24T20:43:43Z",
+        "address": {
+          "location": "Grapevine, TX, US",
+          "city": "Grapevine",
+          "state": "TX",
+          "postal_code": "76051",
+          "country": "US",
+          "latitude": null,
+          "longitude": null
+        }
+      }
+    ]
+  },
+  {
+    "tracking_number": "CR010923277910",
+    "shipment_id": 388578015,
+    "carrier": "Cirro",
+    "service": "REGNJ",
+    "last_mile_carrier": {
+      "carrier": "Cirro",
+      "service": "REGNJ",
+      "tracking_number": "CR010923277910",
+      "tracking_url": "https://www.cirrotrack.com/parcelTracking?id=CR010923277910"
+    },
+    "current_status": "InTransit",
+    "current_substatus_code": "InTransit_002",
+    "current_substatus": "Arrival scan",
+    "tracking_url": "https://www.cirrotrack.com/parcelTracking?id=CR010923277910",
+    "edd": "2026-07-30T17:48:21Z",
+    "edd_source": "carrier",
+    "current_timestamp": "2026-07-27T04:53:24Z",
+    "delivery_signed_by": "",
+    "proof_of_delivery_urls": [],
+    "history": [
+      {
+        "status": "InTransit",
+        "substatus": "Arrival scan",
+        "substatus_code": "InTransit_002",
+        "substatus_message": "Arrived at GOFO Regional Hub",
+        "timestamp": "2026-07-27T04:53:24Z",
+        "address": {
+          "location": "Carteret",
+          "city": "Carteret",
+          "state": "NJ",
+          "postal_code": "07008",
+          "country": "United States",
+          "latitude": 40.5864295,
+          "longitude": -74.226181
+        }
+      },
+      {
+        "status": "PreTransit",
+        "substatus": "Info Received",
+        "substatus_code": "PreTransit_005",
+        "substatus_message": "Shipping Label Created",
+        "timestamp": "2026-07-26T17:48:22Z",
+        "address": {
+          "location": "Dayton, NJ, US",
+          "city": "Dayton",
+          "state": "NJ",
+          "postal_code": "08810",
+          "country": "US",
+          "latitude": null,
+          "longitude": null
+        }
+      }
+    ]
+  },
+  {
+    "tracking_number": "TBA333101780921",
+    "shipment_id": 388136344,
+    "carrier": "Amazon Shipping",
+    "service": "Amazon Shipping Ground",
+    "last_mile_carrier": {
+      "carrier": "Amazon Shipping",
+      "service": "Amazon Shipping Ground",
+      "tracking_number": "TBA333101780921",
+      "tracking_url": "https://track.amazon.com/tracking/TBA333101780921"
+    },
+    "current_status": "InTransit",
+    "current_substatus_code": "InTransit_002",
+    "current_substatus": "Arrival scan",
+    "tracking_url": "https://track.amazon.com/tracking/TBA333101780921",
+    "edd": "2026-07-28T03:00:00Z",
+    "edd_source": "carrier",
+    "current_timestamp": "2026-07-27T06:27:57Z",
+    "delivery_signed_by": "",
+    "proof_of_delivery_urls": [],
+    "history": [
+      {
+        "status": "InTransit",
+        "substatus": "Arrival scan",
+        "substatus_code": "InTransit_002",
+        "substatus_message": "ArrivedAtCarrierFacility",
+        "timestamp": "2026-07-27T06:27:57Z",
+        "address": {
+          "location": "VENICE, FL, 34292, US, United States",
+          "city": "VENICE",
+          "state": "FL",
+          "postal_code": "34292",
+          "country": "United States",
+          "latitude": 27.1171731,
+          "longitude": -82.33433749999999
+        }
+      },
+      {
+        "status": "InTransit",
+        "substatus": "Arrival scan",
+        "substatus_code": "InTransit_002",
+        "substatus_message": "ArrivedAtCarrierFacility",
+        "timestamp": "2026-07-26T22:33:02Z",
+        "address": {
+          "location": "VENICE, FL, 34292, US, United States",
+          "city": "VENICE",
+          "state": "FL",
+          "postal_code": "34292",
+          "country": "United States",
+          "latitude": 27.1171731,
+          "longitude": -82.33433749999999
+        }
+      },
+      {
+        "status": "DeliveryAttemptFailed",
+        "substatus": "Failed Attempt",
+        "substatus_code": "DeliveryAttemptFailed_001",
+        "substatus_message": "DeliveryAttempted",
+        "timestamp": "2026-07-26T17:17:10Z",
+        "address": {
+          "location": "VENICE, FL, 34292, US, United States",
+          "city": "VENICE",
+          "state": "FL",
+          "postal_code": "34292",
+          "country": "United States",
+          "latitude": 27.1171731,
+          "longitude": -82.33433749999999
+        }
+      },
+      {
+        "status": "OutForDelivery",
+        "substatus": "Out for Delivery",
+        "substatus_code": "OutForDelivery_001",
+        "substatus_message": "OutForDelivery",
+        "timestamp": "2026-07-26T14:11:32Z",
+        "address": {
+          "location": "VENICE, FL, 34292, US, United States",
+          "city": "VENICE",
+          "state": "FL",
+          "postal_code": "34292",
+          "country": "United States",
+          "latitude": 27.1171731,
+          "longitude": -82.33433749999999
+        }
+      },
+      {
+        "status": "InTransit",
+        "substatus": "Arrival scan",
+        "substatus_code": "InTransit_002",
+        "substatus_message": "ArrivedAtCarrierFacility",
+        "timestamp": "2026-07-26T07:31:24Z",
+        "address": {
+          "location": "VENICE, FL, 34292, US, United States",
+          "city": "VENICE",
+          "state": "FL",
+          "postal_code": "34292",
+          "country": "United States",
+          "latitude": 27.1171731,
+          "longitude": -82.33433749999999
+        }
+      },
+      {
+        "status": "InTransit",
+        "substatus": "Departure Scan",
+        "substatus_code": "InTransit_004",
+        "substatus_message": "Departed",
+        "timestamp": "2026-07-26T02:59:16Z",
+        "address": {
+          "location": "Davenport, FL, 33897, US, United States",
+          "city": "Davenport",
+          "state": "FL",
+          "postal_code": "33897",
+          "country": "United States",
+          "latitude": 28.1614046,
+          "longitude": -81.60174169999999
+        }
+      },
+      {
+        "status": "InTransit",
+        "substatus": "Arrival scan",
+        "substatus_code": "InTransit_002",
+        "substatus_message": "ArrivedAtCarrierFacility",
+        "timestamp": "2026-07-25T16:54:58Z",
+        "address": {
+          "location": "Davenport, FL, 33897, US, United States",
+          "city": "Davenport",
+          "state": "FL",
+          "postal_code": "33897",
+          "country": "United States",
+          "latitude": 28.1614046,
+          "longitude": -81.60174169999999
+        }
+      },
+      {
+        "status": "InTransit",
+        "substatus": "Departure Scan",
+        "substatus_code": "InTransit_004",
+        "substatus_message": "Departed",
+        "timestamp": "2026-07-25T03:23:00Z",
+        "address": {
+          "location": "UNION CITY, GA, 30291, US, United States",
+          "city": "UNION CITY",
+          "state": "GA",
+          "postal_code": "30291",
+          "country": "United States",
+          "latitude": 33.5754008,
+          "longitude": -84.5327038
+        }
+      },
+      {
+        "status": "InTransit",
+        "substatus": "Carrier Picked up",
+        "substatus_code": "InTransit_017",
+        "substatus_message": "PickupDone",
+        "timestamp": "2026-07-24T21:41:28Z",
+        "address": {
+          "location": "UNION CITY, GA, 30291, US, United States",
+          "city": "UNION CITY",
+          "state": "GA",
+          "postal_code": "30291",
+          "country": "United States",
+          "latitude": 33.5754008,
+          "longitude": -84.5327038
+        }
+      },
+      {
+        "status": "InTransit",
+        "substatus": "Arrival scan",
+        "substatus_code": "InTransit_002",
+        "substatus_message": "ArrivedAtCarrierFacility",
+        "timestamp": "2026-07-24T21:41:28Z",
+        "address": {
+          "location": "UNION CITY, GA, 30291, US, United States",
+          "city": "UNION CITY",
+          "state": "GA",
+          "postal_code": "30291",
+          "country": "United States",
+          "latitude": 33.5754008,
+          "longitude": -84.5327038
+        }
+      },
+      {
+        "status": "PreTransit",
+        "substatus": "Info Received",
+        "substatus_code": "PreTransit_005",
+        "substatus_message": "ReadyForReceive",
+        "timestamp": "2026-07-24T19:57:53Z",
+        "address": {
+          "location": "Fairburn, GA, US",
+          "city": "Fairburn",
+          "state": "GA",
+          "postal_code": "30213",
+          "country": "US",
+          "latitude": null,
+          "longitude": null
+        }
+      }
+    ]
+  },
+  {
+    "tracking_number": "SPXBOS138600810073",
+    "shipment_id": 388398902,
+    "carrier": "SpeedX",
+    "service": "DGD",
+    "last_mile_carrier": {
+      "carrier": "SpeedX",
+      "service": "DGD",
+      "tracking_number": "SPXBOS138600810073",
+      "tracking_url": "https://tracking.speedx.io/SPXBOS138600810073"
+    },
+    "current_status": "InTransit",
+    "current_substatus_code": "InTransit_001",
+    "current_substatus": "In Transit",
+    "tracking_url": "https://tracking.speedx.io/SPXBOS138600810073",
+    "edd": null,
+    "edd_source": null,
+    "current_timestamp": "2026-07-27T02:30:42Z",
+    "delivery_signed_by": "",
+    "proof_of_delivery_urls": [],
+    "history": [
+      {
+        "status": "InTransit",
+        "substatus": "In Transit",
+        "substatus_code": "InTransit_001",
+        "substatus_message": "In transit to destination facility",
+        "timestamp": "2026-07-27T02:30:42Z",
+        "address": {
+          "location": "Linden, NJ, 07036",
+          "city": "Linden",
+          "state": "NJ",
+          "postal_code": "07036",
+          "country": "",
+          "latitude": 40.6265743,
+          "longitude": -74.24341969999999
+        }
+      },
+      {
+        "status": "InTransit",
+        "substatus": "Arrival scan",
+        "substatus_code": "InTransit_002",
+        "substatus_message": "Processing at Designated Facility",
+        "timestamp": "2026-07-26T23:55:07Z",
+        "address": {
+          "location": "Linden, NJ, 07036",
+          "city": "Linden",
+          "state": "NJ",
+          "postal_code": "07036",
+          "country": "United States",
+          "latitude": 40.6265743,
+          "longitude": -74.24341969999999
+        }
+      },
+      {
+        "status": "DeliveryException",
+        "substatus": "Incomplete/incorrect address",
+        "substatus_code": "DeliveryException_001",
+        "substatus_message": "Parcel received but with incorrect address. Note: Please contact with customer service directly and schedule delivery.",
+        "timestamp": "2026-07-26T21:09:23Z",
+        "address": {
+          "location": "Weymouth, MA, 02188",
+          "city": "Weymouth",
+          "state": "MA",
+          "postal_code": "02188",
+          "country": "",
+          "latitude": 42.2175665,
+          "longitude": -70.9369005
+        }
+      },
+      {
+        "status": "PreTransit",
+        "substatus": "Info Received",
+        "substatus_code": "PreTransit_005",
+        "substatus_message": "Shipping Label Created",
+        "timestamp": "2026-07-25T17:10:00Z",
+        "address": {
+          "location": "Dayton, NJ, US",
+          "city": "Dayton",
+          "state": "NJ",
+          "postal_code": "08810",
+          "country": "US",
+          "latitude": 40.6265743,
+          "longitude": -74.24341969999999
+        }
+      }
+    ]
+  },
+  {
+    "tracking_number": "CR010921150876",
+    "shipment_id": 388383366,
+    "carrier": "Cirro",
+    "service": "REGNJ",
+    "last_mile_carrier": {
+      "carrier": "Cirro",
+      "service": "REGNJ",
+      "tracking_number": "CR010921150876",
+      "tracking_url": "https://www.cirrotrack.com/parcelTracking?id=CR010921150876"
+    },
+    "current_status": "OutForDelivery",
+    "current_substatus_code": "OutForDelivery_001",
+    "current_substatus": "Out for Delivery",
+    "tracking_url": "https://www.cirrotrack.com/parcelTracking?id=CR010921150876",
+    "edd": "2026-07-29T16:09:20Z",
+    "edd_source": "carrier",
+    "current_timestamp": "2026-07-26T23:28:27Z",
+    "delivery_signed_by": "",
+    "proof_of_delivery_urls": [],
+    "history": [
+      {
+        "status": "OutForDelivery",
+        "substatus": "Out for Delivery",
+        "substatus_code": "OutForDelivery_001",
+        "substatus_message": "Out for Delivery",
+        "timestamp": "2026-07-26T23:28:27Z",
+        "address": {
+          "location": "Greensburg",
+          "city": "Ambridge",
+          "state": "PA",
+          "postal_code": "15003",
+          "country": "",
+          "latitude": 40.5989009,
+          "longitude": -80.2153998
+        }
+      },
+      {
+        "status": "InTransit",
+        "substatus": "Arrival scan",
+        "substatus_code": "InTransit_002",
+        "substatus_message": "Arrived at GOFO Delivery Station",
+        "timestamp": "2026-07-26T21:47:54Z",
+        "address": {
+          "location": "Ambridge",
+          "city": "Ambridge",
+          "state": "PA",
+          "postal_code": "15003",
+          "country": "",
+          "latitude": 40.5989009,
+          "longitude": -80.2153998
+        }
+      },
+      {
+        "status": "InTransit",
+        "substatus": "In Transit",
+        "substatus_code": "InTransit_001",
+        "substatus_message": "In Transit to Next Facility",
+        "timestamp": "2026-07-26T20:46:38Z",
+        "address": {
+          "location": "Ambridge",
+          "city": "Ambridge",
+          "state": "PA",
+          "postal_code": "15003",
+          "country": "",
+          "latitude": 40.5989009,
+          "longitude": -80.2153998
+        }
+      },
+      {
+        "status": "InTransit",
+        "substatus": "Departure Scan",
+        "substatus_code": "InTransit_004",
+        "substatus_message": "Departed GOFO Regional Hub",
+        "timestamp": "2026-07-26T10:01:02Z",
+        "address": {
+          "location": "Carteret",
+          "city": "Carteret",
+          "state": "NJ",
+          "postal_code": "07008",
+          "country": "",
+          "latitude": 40.5864295,
+          "longitude": -74.226181
+        }
+      },
+      {
+        "status": "InTransit",
+        "substatus": "In Transit",
+        "substatus_code": "InTransit_001",
+        "substatus_message": "Loaded on Vehicle",
+        "timestamp": "2026-07-26T09:51:03Z",
+        "address": {
+          "location": "Carteret",
+          "city": "Carteret",
+          "state": "NJ",
+          "postal_code": "07008",
+          "country": "",
+          "latitude": 40.5864295,
+          "longitude": -74.226181
+        }
+      },
+      {
+        "status": "InTransit",
+        "substatus": "Arrival scan",
+        "substatus_code": "InTransit_002",
+        "substatus_message": "Arrived at GOFO Regional Hub",
+        "timestamp": "2026-07-26T05:06:50Z",
+        "address": {
+          "location": "Carteret",
+          "city": "Carteret",
+          "state": "NJ",
+          "postal_code": "07008",
+          "country": "United States",
+          "latitude": 40.5864295,
+          "longitude": -74.226181
+        }
+      },
+      {
+        "status": "PreTransit",
+        "substatus": "Info Received",
+        "substatus_code": "PreTransit_005",
+        "substatus_message": "Shipping Label Created",
+        "timestamp": "2026-07-25T16:09:20Z",
+        "address": {
+          "location": "Dayton, NJ, US",
+          "city": "Dayton",
+          "state": "NJ",
+          "postal_code": "08810",
+          "country": "US",
+          "latitude": null,
+          "longitude": null
+        }
+      }
+    ]
+  }
+]

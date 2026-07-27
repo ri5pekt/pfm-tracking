@@ -1,0 +1,17 @@
+---
+description: Core conventions for the PFM tracking platform. Always apply.
+alwaysApply: true
+---
+
+# PFM Tracking — core rules
+
+- Follow `docs/dev-plan.md` and `AGENTS.md`. Do not invent alternate architectures.
+- ShipBob tracking = `GET /2026-07/shipments-tracking` with **repeated** `ShipmentIds=` query params (max 25). Never comma-separate IDs.
+- Do not use `/shipment/{id}/timeline` — it 404s.
+- No WooCommerce on the runtime order path.
+- Polling only in v1; no webhooks.
+- `tracking_events` is append-only; status is derived, not blindly overwritten.
+- `is_stalled` is a boolean flag, not an internal_status value.
+- Never commit `.env` or secrets.
+- Public lookup requires order number + email/postcode (never order number alone).
+- Customer page reads DB/cache only — never call ShipBob/TrackingMore on page render.

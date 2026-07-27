@@ -1,0 +1,14 @@
+{
+  "name": "pfm-tracking",
+  "private": true,
+  "description": "Particle For Men order tracking platform (Narvar replacement)",
+  "workspaces": [
+    "api",
+    "worker",
+    "admin"
+  ],
+  "scripts": {
+    "compose:up": "docker compose up -d postgres redis",
+    "compose:down": "docker compose down"
+  }
+}

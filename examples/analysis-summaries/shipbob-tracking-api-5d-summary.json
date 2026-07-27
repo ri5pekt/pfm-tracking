@@ -1,0 +1,50 @@
+﻿{
+    "pulledAt":  "2026-07-27T11:48:08.8463929+03:00",
+    "dayRange":  [
+                     "2026-07-22",
+                     "2026-07-23",
+                     "2026-07-24",
+                     "2026-07-25",
+                     "2026-07-26"
+                 ],
+    "requestedIds":  5023,
+    "trackingRecords":  5022,
+    "historyEvents":  27572,
+    "shipmentsWithExceptionEvt":  20,
+    "shipmentsWithAttemptEvt":  28,
+    "exceptionEventTotal":  54,
+    "exceptionReasonDistinct":  18,
+    "currentStatus":  {
+                          "DeliveryAttemptFailed":  16,
+                          "Exception":  6,
+                          "OutForDelivery":  38,
+                          "Delivered":  2008,
+                          "DeliveryException":  2,
+                          "PreTransit":  1371,
+                          "AvailableForPickup":  4,
+                          "InTransit":  1577
+                      },
+    "histStatus":  {
+                       "DeliveryAttemptFailed":  34,
+                       "Exception":  8,
+                       "OutForDelivery":  2214,
+                       "Delivered":  2008,
+                       "DeliveryException":  12,
+                       "PreTransit":  5471,
+                       "AvailableForPickup":  5,
+                       "InTransit":  17820
+                   },
+    "carriers":  {
+                     "DhlEcs":  3,
+                     "USPS":  292,
+                     "OnTrac":  185,
+                     "FedEx":  11,
+                     "Cirro":  355,
+                     "OSMWorldwide":  571,
+                     "BetterTrucks":  114,
+                     "UPS":  2,
+                     "Amazon Shipping":  1642,
+                     "SpeedX":  1003,
+                     "UniUni":  844
+                 }
+}

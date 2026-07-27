@@ -1,0 +1,21 @@
+count,logTypeName,logTypeText
+24,DeliveryException,Shipment Delivery Exception
+18,DeliveryAttemptFailed,The delivery attempt failed will be returned to the UniUni warehouse
+8,DeliveryAttemptFailed,Undeliverable
+7,DeliveryAttemptFailed,Attempted Delivery: No access. The package is undeliverable and schedule to redelivery
+7,DeliveryAttemptFailed,DeliveryAttempted
+6,DeliveryAttemptFailed,Delivery rescheduled for 2nd delivery attempt
+4,DeliveryAttemptFailed,Delivery attempted
+2,DeliveryAttemptFailed,"Attempted Delivery:Building Closed/Weekend/Holiday. The package is undeliverable and schedule to redelivery. Redelivery is Scheduled on July 28, 2026"
+2,DeliveryAttemptFailed,"The driver tried to deliver the package, but the business was closed. We will reattempt up to 3 times.  Contact us with any access or delivery instructions"
+2,DeliveryAttemptFailed,Redelivery Scheduled for Next Business Day
+1,DeliveryAttemptFailed,Attempted Delivery: Invalid Address. Missing Apartment# / Suite#. The package is undeliverable and schedule to redelivery
+1,DeliveryAttemptFailed,The delivery of your package was attempted but could not be completed due to a lack of an access code. Please contact us to provide the needed access details to avoid a return
+1,DeliveryAttemptFailed,Package Delivery Attempted
+1,DeliveryAttemptFailed,Rejected
+1,DeliveryAttemptFailed,"We tried to deliver to the business, but it was closed. A second attempt will be made the next business day."
+1,DeliveryAttemptFailed,Notice Left (Receptacle Full/Item Oversized)
+1,DeliveryAttemptFailed,"Attempted Delivery:Building Closed/Weekend/Holiday. The package is undeliverable and schedule to redelivery. Redelivery is Scheduled on July 29, 2026"
+1,DeliveryAttemptFailed,"Attempted Delivery: Vehicle breakdown. The package is undeliverable and schedule to redelivery. Redelivery is Scheduled on July 26, 2026"
+1,DeliveryAttemptFailed,Reminder to Schedule Redelivery of your item
+1,DeliveryAttemptFailed,We're sorry but we were unable to complete your delivery. Please continue to check your tracking for real time updates

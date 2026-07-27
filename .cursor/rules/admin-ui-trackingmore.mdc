@@ -1,0 +1,20 @@
+---
+description: Admin Vue UI should follow TrackingMore-style list + slide-over
+globs: "admin/**/*.{vue,ts,tsx,css}"
+alwaysApply: false
+---
+
+# Admin UI reference
+
+Follow `docs/ui-references/README.md` and the screenshots in `docs/ui-references/admin/`.
+
+Required patterns:
+- Left sidebar + shipments list as primary CS view
+- Status filter tabs with counts
+- Search by tracking number or order number
+- Row shows carrier, tracking #, status badge, latest event text + location + time
+- Detail opens as a **right-hand slide-over**, not a separate page as the primary flow
+- “View tracking page” opens the public customer URL
+- `is_stalled` renders as a separate chip beside status, never instead of status
+
+Do not clone TrackingMore branding; clone the interaction model.

@@ -1,0 +1,16 @@
+---
+description: ShipBob API client and Tracking API batch conventions
+globs: "**/shipbob*/**/*.{ts,js,mjs}"
+alwaysApply: false
+---
+
+# ShipBob client rules
+
+- Orders: `GET {SHIPBOB_API_BASE}/order` with header `shipbob_channel_id`
+- Tracking: `GET https://api.shipbob.com/2026-07/shipments-tracking`
+- Batch: `ShipmentIds=id1&ShipmentIds=id2` (repeated). Comma-separated → 400.
+- Lookup by tracking number: `GET /2026-07/tracking?TrackingIds=…` (same repeated-param rule)
+- Honour `X-Remaining-Calls` / `x-retry-after` on 429
+- Map `history[]` into `tracking_events` with hash on shipment_id + occurred_at + status + substatus_code + description
+- Location = `history[i].address` (city/state/postal/lat/lng); current location = newest history row
+- See `examples/shipbob/` and skill `shipbob-tracking-api`

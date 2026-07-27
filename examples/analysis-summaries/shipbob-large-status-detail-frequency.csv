@@ -1,0 +1,11 @@
+statusDetailName,count,percent
+Delivered,13149,74.07
+InTransit,1794,10.11
+Processing,1269,7.15
+(none),1005,5.66
+Picked,330,1.86
+OutForDelivery,84,0.47
+DeliveryAttemptFailed,66,0.37
+DeliveryException,47,0.26
+Manual,7,0.04
+Packed,1,0.01

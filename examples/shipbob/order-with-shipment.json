@@ -1,0 +1,40 @@
+{
+  "reference_id": "4038000",
+  "shipments": [
+    {
+      "tracking": {
+        "tracking_number": "CR010921689329",
+        "tracking_url": "https://www.cirrotrack.com/parcelTracking?id=CR010921689329",
+        "carrier": "Cirro"
+      },
+      "status": "Completed",
+      "id": 388185605
+    }
+  ],
+  "channel": {
+    "name": "Particle channel",
+    "id": 180705
+  },
+  "products": [
+    {
+      "quantity": 1,
+      "sku": "751889384926",
+      "unit_price": 12.0
+    }
+  ],
+  "status": "Completed",
+  "id": 379000000,
+  "recipient": {
+    "name": "Jane Example",
+    "address": {
+      "city": "Austin",
+      "zip_code": "78701",
+      "address1": "123 Example St",
+      "country": "US",
+      "state": "TX"
+    },
+    "phone_number": "+15555550100",
+    "email": "customer@example.com"
+  },
+  "order_number": "4038000"
+}

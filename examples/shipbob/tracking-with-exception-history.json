@@ -1,0 +1,87 @@
+{
+  "tracking_number": "SPXBOS138600810073",
+  "shipment_id": 388398902,
+  "carrier": "SpeedX",
+  "service": "DGD",
+  "last_mile_carrier": {
+    "carrier": "SpeedX",
+    "service": "DGD",
+    "tracking_number": "SPXBOS138600810073",
+    "tracking_url": "https://tracking.speedx.io/SPXBOS138600810073"
+  },
+  "current_status": "InTransit",
+  "current_substatus_code": "InTransit_001",
+  "current_substatus": "In Transit",
+  "tracking_url": "https://tracking.speedx.io/SPXBOS138600810073",
+  "edd": null,
+  "edd_source": null,
+  "current_timestamp": "2026-07-27T02:30:42Z",
+  "delivery_signed_by": "",
+  "proof_of_delivery_urls": [],
+  "history": [
+    {
+      "status": "InTransit",
+      "substatus": "In Transit",
+      "substatus_code": "InTransit_001",
+      "substatus_message": "In transit to destination facility",
+      "timestamp": "2026-07-27T02:30:42Z",
+      "address": {
+        "location": "Linden, NJ, 07036",
+        "city": "Linden",
+        "state": "NJ",
+        "postal_code": "07036",
+        "country": "",
+        "latitude": 40.6265743,
+        "longitude": -74.24341969999999
+      }
+    },
+    {
+      "status": "InTransit",
+      "substatus": "Arrival scan",
+      "substatus_code": "InTransit_002",
+      "substatus_message": "Processing at Designated Facility",
+      "timestamp": "2026-07-26T23:55:07Z",
+      "address": {
+        "location": "Linden, NJ, 07036",
+        "city": "Linden",
+        "state": "NJ",
+        "postal_code": "07036",
+        "country": "United States",
+        "latitude": 40.6265743,
+        "longitude": -74.24341969999999
+      }
+    },
+    {
+      "status": "DeliveryException",
+      "substatus": "Incomplete/incorrect address",
+      "substatus_code": "DeliveryException_001",
+      "substatus_message": "Parcel received but with incorrect address. Note: Please contact with customer service directly and schedule delivery.",
+      "timestamp": "2026-07-26T21:09:23Z",
+      "address": {
+        "location": "Weymouth, MA, 02188",
+        "city": "Weymouth",
+        "state": "MA",
+        "postal_code": "02188",
+        "country": "",
+        "latitude": 42.2175665,
+        "longitude": -70.9369005
+      }
+    },
+    {
+      "status": "PreTransit",
+      "substatus": "Info Received",
+      "substatus_code": "PreTransit_005",
+      "substatus_message": "Shipping Label Created",
+      "timestamp": "2026-07-25T17:10:00Z",
+      "address": {
+        "location": "Dayton, NJ, US",
+        "city": "Dayton",
+        "state": "NJ",
+        "postal_code": "08810",
+        "country": "US",
+        "latitude": 40.6265743,
+        "longitude": -74.24341969999999
+      }
+    }
+  ]
+}

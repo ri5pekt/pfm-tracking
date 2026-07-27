@@ -1,0 +1,25 @@
+{
+  "data": {
+    "trackinfo": [
+      {
+        "location": "United States",
+        "checkpoint_date": "2026-07-15 10:00:00",
+        "tracking_detail": "Arrived at destination country",
+        "checkpoint_delivery_status": "transit"
+      },
+      {
+        "location": "Singapore",
+        "checkpoint_date": "2026-07-13 08:00:00",
+        "tracking_detail": "Shipment information received",
+        "checkpoint_delivery_status": "transit"
+      }
+    ],
+    "tracking_number": "202607132208XFUV8I",
+    "delivery_status": "transit",
+    "courier_code": "dhlglobalmail"
+  },
+  "meta": {
+    "code": 200,
+    "message": "Success"
+  }
+}

@@ -1,0 +1,70 @@
+{
+  "pulledAt": "2026-07-27T11:08:27.2752663+03:00",
+  "totalShipments": 17752,
+  "dayCount": 13,
+  "dayRange": [
+    "2026-07-14",
+    "2026-07-26"
+  ],
+  "detailCounts": {
+    "Delivered": 13149,
+    "DeliveryException": 47,
+    "(none)": 1005,
+    "Packed": 1,
+    "Picked": 330,
+    "DeliveryAttemptFailed": 66,
+    "Manual": 7,
+    "OutForDelivery": 84,
+    "InTransit": 1794,
+    "Processing": 1269
+  },
+  "statusCounts": {
+    "LabeledCreated": 194,
+    "Completed": 16410,
+    "Cancelled": 58,
+    "Processing": 1083,
+    "OnHold": 7
+  },
+  "carrierCounts": {
+    "FedEx": 21,
+    "OnTrac": 645,
+    "UPS": 8,
+    "(none)": 1148,
+    "OSMWorldwide": 1733,
+    "DhlEcs": 30,
+    "USPS": 894,
+    "UniUni": 2826,
+    "Cirro": 1580,
+    "ShipBob Freight": 1,
+    "BetterTrucks": 358,
+    "SpeedX": 3624,
+    "Amazon Shipping": 4884
+  },
+  "detailDescCounts": {
+    "DeliveryAttemptFailed | Delivery Attempt Failed": 66,
+    "Picked | Picking Completed": 330,
+    "Delivered | Shipment Delivered": 13149,
+    "Packed | Packing Completed": 1,
+    "OutForDelivery | Shipment Out For Delivery": 84,
+    "DeliveryException | OrderTracking contains CatchAll date": 47,
+    "Processing | Waiting For Carrier Pickup": 1269,
+    "Manual | Manual": 7,
+    "InTransit | Shipment In Transit": 1794
+  },
+  "exceptionByTypeCarrier": {
+    "DeliveryException | USPS": 4,
+    "DeliveryAttemptFailed | UniUni": 32,
+    "DeliveryAttemptFailed | Amazon Shipping": 8,
+    "DeliveryException | Cirro": 7,
+    "DeliveryAttemptFailed | BetterTrucks": 1,
+    "DeliveryAttemptFailed | OSMWorldwide": 4,
+    "DeliveryException | Amazon Shipping": 3,
+    "DeliveryAttemptFailed | OnTrac": 4,
+    "DeliveryAttemptFailed | USPS": 4,
+    "DeliveryAttemptFailed | SpeedX": 12,
+    "DeliveryAttemptFailed | UPS": 1,
+    "DeliveryException | OSMWorldwide": 10,
+    "DeliveryException | SpeedX": 21,
+    "DeliveryException | OnTrac": 2
+  }
+}
