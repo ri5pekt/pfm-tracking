@@ -24,7 +24,6 @@ ENV GIT_SHA=$GIT_SHA
 ENV APP_VERSION=$APP_VERSION
 COPY --from=deps /app/node_modules ./node_modules
 COPY --from=deps /app/api/package.json ./api/package.json
-COPY --from=deps /app/api/node_modules ./api/node_modules
 COPY --from=build /app/api/dist ./api/dist
 COPY api/src/public ./api/dist/public
 COPY api/public ./api/public
