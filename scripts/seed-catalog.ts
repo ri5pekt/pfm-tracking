@@ -20,20 +20,50 @@ async function main(): Promise<void> {
     await readFile(path.join(repoRoot, 'api/catalog/products-manifest.json'), 'utf8'),
   ) as Array<{ sku: string; title: string; imagePath: string }>;
 
+  let detailsFile: {
+    products?: Record<string, { description?: string | null; product_url?: string | null }>;
+  } = {};
+  try {
+    detailsFile = JSON.parse(
+      await readFile(path.join(repoRoot, 'api/catalog/product-details.json'), 'utf8'),
+    ) as typeof detailsFile;
+  } catch {
+    /* optional */
+  }
+  const details = detailsFile.products ?? {};
+
   let products = 0;
   for (const p of manifest) {
     if (!p.sku || !p.title) continue;
+    const d = details[p.sku] ?? {};
     await db.query(
-      `INSERT INTO products (sku, title, image_url, source, updated_at)
-       VALUES ($1, $2, $3, 'shopify_catalog', now())
+      `INSERT INTO products (sku, title, image_url, description, product_url, source, updated_at)
+       VALUES ($1, $2, $3, $4, $5, 'shopify_catalog', now())
        ON CONFLICT (sku) DO UPDATE SET
          title = EXCLUDED.title,
          image_url = EXCLUDED.image_url,
+         description = COALESCE(EXCLUDED.description, products.description),
+         product_url = COALESCE(EXCLUDED.product_url, products.product_url),
          source = EXCLUDED.source,
          updated_at = now()`,
-      [p.sku, p.title, p.imagePath],
+      [p.sku, p.title, p.imagePath, d.description ?? null, d.product_url ?? null],
     );
     products += 1;
+  }
+
+  // Apply details to any SKU already in DB (e.g. manual) even if not in manifest
+  let detailsApplied = 0;
+  for (const [sku, d] of Object.entries(details)) {
+    if (!sku || sku.startsWith('_')) continue;
+    const result = await db.query(
+      `UPDATE products
+       SET description = COALESCE($2, description),
+           product_url = COALESCE($3, product_url),
+           updated_at = now()
+       WHERE sku = $1`,
+      [sku, d.description ?? null, d.product_url ?? null],
+    );
+    detailsApplied += result.rowCount ?? 0;
   }
 
   let packaging = 0;
@@ -82,7 +112,7 @@ async function main(): Promise<void> {
     /* optional */
   }
 
-  console.log({ products, packaging, manual });
+  console.log({ products, packaging, manual, detailsApplied });
   await db.end();
 }
 

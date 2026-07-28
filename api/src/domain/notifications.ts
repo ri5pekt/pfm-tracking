@@ -95,22 +95,67 @@ async function loadShipment(db: Db, shipmentId: string): Promise<ShipmentNotifyR
   return rows[0] ?? null;
 }
 
-async function loadItems(db: Db, shipmentId: string) {
+async function loadItems(db: Db, shipmentId: string, publicBaseUrl: string) {
   const { rows } = await db.query<{
     sku: string;
     quantity: number;
     title: string | null;
     image_url: string | null;
+    description: string | null;
+    product_url: string | null;
+    catalog_source: string | null;
   }>(
-    `SELECT sku, quantity, title, image_url FROM shipment_items WHERE shipment_id = $1 ORDER BY created_at`,
+    `SELECT si.sku, si.quantity,
+            COALESCE(NULLIF(trim(si.title), ''), p.title) AS title,
+            COALESCE(NULLIF(trim(si.image_url), ''), p.image_url) AS image_url,
+            p.description,
+            p.product_url,
+            p.source AS catalog_source
+     FROM shipment_items si
+     LEFT JOIN LATERAL (
+       SELECT pr.title, pr.image_url, pr.description, pr.product_url, pr.source
+       FROM products pr
+       LEFT JOIN product_sku_aliases a ON a.product_sku = pr.sku
+       WHERE pr.sku = si.sku
+          OR a.alias_sku = si.sku
+          OR regexp_replace(pr.sku, '^0+', '') = regexp_replace(si.sku, '^0+', '')
+       ORDER BY
+         CASE
+           WHEN pr.sku = si.sku THEN 0
+           WHEN a.alias_sku = si.sku THEN 1
+           ELSE 2
+         END
+       LIMIT 1
+     ) p ON true
+     WHERE si.shipment_id = $1
+     ORDER BY si.created_at`,
     [shipmentId],
   );
-  return rows.map((i) => ({
-    sku: i.sku,
-    quantity: i.quantity,
-    title: i.title,
-    imageUrl: i.image_url,
-  }));
+
+  const base = publicBaseUrl.replace(/\/$/, '');
+  return rows
+    .filter((i) => i.catalog_source !== 'packaging')
+    .map((i) => {
+      const image = i.image_url?.trim() || null;
+      const imageUrl =
+        image && image.startsWith('/')
+          ? `${base}${image}`
+          : image;
+      return {
+        // Narvar-compatible names for Klaviyo flow templates
+        product_sku: i.sku,
+        name: i.title,
+        description: i.description,
+        item_url: i.product_url,
+        image_url: imageUrl,
+        quantity: i.quantity,
+        // camelCase aliases (existing PFM shape)
+        sku: i.sku,
+        title: i.title,
+        imageUrl,
+        itemUrl: i.product_url,
+      };
+    });
 }
 
 function candidateTypes(row: ShipmentNotifyRow): NotificationEventType[] {
@@ -152,21 +197,25 @@ async function buildPayload(
   const trackingPageUrl = env.tokenSecret
     ? await resolveOrderTrackingUrl(db, row.order_id, env.tokenSecret, env.publicBaseUrl)
     : null;
-  const items = await loadItems(db, row.id);
+  const items = await loadItems(db, row.id, env.publicBaseUrl);
 
   return {
     event: eventType,
     email: row.customer_email,
     customerName: row.customer_name,
     orderNumber: row.order_number,
+    order_number: row.order_number,
     trackingPageUrl,
+    tracking_url: trackingPageUrl,
     carrier: row.carrier_name ?? row.carrier_code,
     trackingNumber: row.tracking_number,
+    tracking_number: row.tracking_number,
     carrierTrackingUrl: row.carrier_tracking_url,
     edd: row.edd ? new Date(row.edd).toISOString() : null,
     destinationCountry: row.destination_country,
     internalStatus: row.internal_status,
     latestDescription: row.latest_description,
+    item_names: items.map((i) => i.name).filter(Boolean),
     items,
     dryRun: env.dryRun || !env.apiKey,
   };

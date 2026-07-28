@@ -19,6 +19,7 @@ const imagesDir = path.join(repoRoot, 'api', 'public', 'products');
 const aliasesPath = path.join(repoRoot, 'api', 'catalog', 'sku-aliases.json');
 const packagingPath = path.join(repoRoot, 'api', 'catalog', 'packaging-skus.json');
 const manualPath = path.join(repoRoot, 'api', 'catalog', 'manual-products.json');
+const detailsPath = path.join(repoRoot, 'api', 'catalog', 'product-details.json');
 const manifestPath = path.join(repoRoot, 'api', 'catalog', 'products-manifest.json');
 
 const DEFAULT_JSON =
@@ -41,6 +42,10 @@ type SourceProduct = {
   short_description?: string;
   card_image_url?: string;
   featured_image_url?: string;
+};
+
+type ProductDetailsFile = {
+  products?: Record<string, { description?: string | null; product_url?: string | null }>;
 };
 
 function safeSkuFile(sku: string, ext: string): string {
@@ -104,6 +109,14 @@ async function main(): Promise<void> {
     imagePath: string;
   }> = [];
 
+  let detailsFile: ProductDetailsFile = {};
+  try {
+    detailsFile = JSON.parse(await readFile(detailsPath, 'utf8')) as ProductDetailsFile;
+  } catch {
+    /* optional */
+  }
+  const details = detailsFile.products ?? {};
+
   let ok = 0;
   let failed = 0;
 
@@ -118,21 +131,28 @@ async function main(): Promise<void> {
     const file = safeSkuFile(String(p.sku), ext);
     const dest = path.join(imagesDir, file);
     const publicPath = `/products/${file}`;
+    const sku = String(p.sku);
+    const d = details[sku] ?? {};
+    const description =
+      (p.short_description || '').replace(/\r\n/g, ' ').trim() || d.description || null;
+    const productUrl = d.product_url ?? null;
 
     try {
       await downloadImage(imageUrl, dest);
       await db.query(
-        `INSERT INTO products (sku, title, image_url, source, updated_at)
-         VALUES ($1, $2, $3, 'shopify_catalog', now())
+        `INSERT INTO products (sku, title, image_url, description, product_url, source, updated_at)
+         VALUES ($1, $2, $3, $4, $5, 'shopify_catalog', now())
          ON CONFLICT (sku) DO UPDATE SET
            title = EXCLUDED.title,
            image_url = EXCLUDED.image_url,
+           description = COALESCE(EXCLUDED.description, products.description),
+           product_url = COALESCE(EXCLUDED.product_url, products.product_url),
            source = EXCLUDED.source,
            updated_at = now()`,
-        [String(p.sku), p.title.trim(), publicPath],
+        [sku, p.title.trim(), publicPath, description, productUrl],
       );
       manifest.push({
-        sku: String(p.sku),
+        sku,
         title: p.title.trim(),
         imageFile: file,
         imagePath: publicPath,

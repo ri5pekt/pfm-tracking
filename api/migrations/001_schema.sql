@@ -15,6 +15,8 @@ CREATE TABLE products (
   sku text PRIMARY KEY,
   title text NOT NULL,
   image_url text,
+  description text,
+  product_url text,
   source text NOT NULL DEFAULT 'manual',
   updated_at timestamptz NOT NULL DEFAULT now()
 );

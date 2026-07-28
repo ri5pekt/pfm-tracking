@@ -1,0 +1,145 @@
+{
+  "_comment": "SKU -> description + product page URL for Klaviyo item payloads",
+  "products": {
+    "751889384926": {
+      "description": "Our signature anti-aging cream that fixes eye bags, dark spots and wrinkles.",
+      "product_url": "https://www.particleformen.com/product/particle-face-cream/"
+    },
+    "00860012469772": {
+      "description": "Self-foaming anti-aging shaving gel that firms and hydrates your skin in seconds.",
+      "product_url": "https://www.particleformen.com/product/particle-43-anti-aging-shaving-gel/"
+    },
+    "00860012469796": {
+      "description": "Instantly smooths eye bags, puffiness and fine lines. Keeps your look fresh, firm, and sharp all day.",
+      "product_url": "https://www.particleformen.com/product/particle-instant-eye-firming-cream/"
+    },
+    "860010338483": {
+      "description": "The first transparent sunscreen for men that doesn't leave white marks.",
+      "product_url": "https://www.particleformen.com/product/particle-face-shield/"
+    },
+    "636665869647": {
+      "description": "Daily anti-aging face wash that leaves your skin fresh and clean.",
+      "product_url": "https://www.particleformen.com/product/particle-face-wash/"
+    },
+    "636665869654": {
+      "description": "Deep cleansing anti-aging mask that firms the skin and minimizes pores.",
+      "product_url": "https://www.particleformen.com/product/particle-face-mask/"
+    },
+    "00860012469789": {
+      "description": "Deeply hydrates dry, cracked lips, protects against wind and cold, and restores lasting comfort for smoother, healthier-looking lips \u2014 with no shine or stickiness.",
+      "product_url": "https://www.particleformen.com/product/particle-lip-balm/"
+    },
+    "860005339785": {
+      "description": "The new cologne for men that induces seduction and lasts all day long.",
+      "product_url": "https://www.particleformen.com/product/particle-gravite/"
+    },
+    "00860012469765": {
+      "description": "The modern scent for men who leave a lasting impression.",
+      "product_url": "https://www.particleformen.com/product/particle-varros/"
+    },
+    "00860014497216": {
+      "description": "Powerfully targets dark spots, hydrates deeply, and evens tone for smoother, healthier-looking hands and arms.",
+      "product_url": "https://www.particleformen.com/product/particle-hand-cream/"
+    },
+    "860012469710": {
+      "description": "All-day freshness with Gravit\u00e9\u2019s signature scent",
+      "product_url": "https://www.particleformen.com/product/particle-gravite-deodorant/"
+    },
+    "860010338421": {
+      "description": "Flatten the appearance of your tummy and firm up your abdomen.",
+      "product_url": "https://www.particleformen.com/product/particle-ab-firming-cream/"
+    },
+    "860005339778": {
+      "description": "Firm, lift and moisturize your neck with this advanced triple-action formula.",
+      "product_url": "https://www.particleformen.com/product/particle-neck-cream/"
+    },
+    "636665869678": {
+      "description": "Revitalize your skin with Particle's Dead Sea mineral-infused body wash.",
+      "product_url": "https://www.particleformen.com/product/particle-body-wash/"
+    },
+    "860012469703": {
+      "description": "Gradually Reduces Gray Hair Without Dye.",
+      "product_url": "https://www.particleformen.com/product/particle-anti-gray-serum/"
+    },
+    "636665869661": {
+      "description": "Experience thicker, stronger and healthier hair.",
+      "product_url": "https://www.particleformen.com/product/particle-hair-thickening-shampoo/"
+    },
+    "860005339723": {
+      "description": "Softens, styles and nourishes your beard.",
+      "product_url": "https://www.particleformen.com/product/particle-beard-oil/"
+    },
+    "860012469727": {
+      "description": "Enhance your passion and performance with our powerful libido booster for men",
+      "product_url": "https://www.particleformen.com/product/particle-infinite-male/"
+    },
+    "860005339747": {
+      "description": "Gummies full of collagen and biotin for a youthful skin boost.",
+      "product_url": "https://www.particleformen.com/product/particle-skin-vitamin-gummies/"
+    },
+    "860005339761": {
+      "description": "Gummies full of biotin and zinc for hair loss prevention.",
+      "product_url": "https://www.particleformen.com/product/particle-hair-vitamin-gummies/"
+    },
+    "77000011": {
+      "description": "Unleash your charm with this bundle of premium grooming products designed for the modern man, reflecting sophistication, power, and lasting appeal.",
+      "product_url": "https://www.particleformen.com/product/particle-lady-killer-kit/"
+    },
+    "9162025": {
+      "description": "Revitalize your skin and achieve a toned and lifted complexion with this powerful trio of anti-aging products.",
+      "product_url": "https://www.particleformen.com/product/starter-bundle/"
+    },
+    "123456": {
+      "description": "Get all three essential Particle products to cover your facial skincare needs.",
+      "product_url": "https://www.particleformen.com/product/essential-bundle/"
+    },
+    "2769533": {
+      "description": "Experience our signature Gravit\u00e9 fragrance in both cologne and deodorant. Stay fresh all day and make a bold, lasting impression all night.",
+      "product_url": "https://www.particleformen.com/product/particle-gravit-bundle/"
+    },
+    "223456": {
+      "description": "Get all five essential Particle skincare products plus our high-grade body wash and hair strengthening shampoo.",
+      "product_url": "https://www.particleformen.com/product/advanced-bundle/"
+    },
+    "9162021": {
+      "description": "Strengthen your hair and cleanse your body with this duo set.",
+      "product_url": "https://www.particleformen.com/product/power-shower-set/"
+    },
+    "2769100": {
+      "description": "Keep your skin protected, hydrated, and energized through every round with a combination of SPF defense and anti-aging power.",
+      "product_url": "https://www.particleformen.com/product/particle-golfers-bundle/"
+    },
+    "77000013": {
+      "description": "Elevate his grooming routine with this premium collection of essentials, curated to help the modern man look and feel his best at any age.",
+      "product_url": "https://www.particleformen.com/product/particle-ultimate-mens-gift-bundle/"
+    },
+    "860014695551": {
+      "description": "Discover Our Top-Selling Colognes: Gravit\u00e9 & Varros From early morning to late at night, confidence never fades.",
+      "product_url": "https://www.particleformen.com/product/bold-moves-bundle/"
+    },
+    "77000015": {
+      "description": "Upgrade his daily routine with three grooming essentials for confidence and a more refined look\u2014morning to night. Skincare, scent, and shaving best-sellers that keep him sharp and fresh.",
+      "product_url": "https://www.particleformen.com/product/mens-gift-bundle/"
+    },
+    "77000017": {
+      "description": "A daily routine built to target visible dark spots and uneven tone. Helps restore a clearer, more balanced look to both face and hands.",
+      "product_url": "https://www.particleformen.com/product/dark-spot-remover-set/"
+    },
+    "woo-3713629": {
+      "description": "Two of Particle\u2019s top products in one powerful routine. The best-selling Face Cream helps reduce eye bags, wrinkles, and dark spots, while Gravit\u00e9 Cologne adds a bold, masculine scent designed to turn heads.",
+      "product_url": "https://www.particleformen.com/product/head-turner-set/"
+    },
+    "77000016": {
+      "description": "A complete anti-aging routine designed to smooth skin, reduce visible signs of aging, and improve overall skin appearance \u2014 before and after shaving.",
+      "product_url": "https://www.particleformen.com/product/the-smooth-skin-set/"
+    },
+    "77000019": {
+      "description": "Instant results when it matters. Daily care for a fresher look. The Eyebag-Killer Set helps men fight tired-looking eyes from both sides.",
+      "product_url": "https://www.particleformen.com/product/eyebag-killer-set/"
+    },
+    "70117000": {
+      "description": null,
+      "product_url": "https://www.particleformen.com/product/gravite-vial/"
+    }
+  }
+}
