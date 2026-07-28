@@ -87,11 +87,11 @@ export function klaviyoMetricName(eventType: string): string {
     case 'shipment.delivered':
       return 'PFM Shipment Delivered';
     case 'shipment.delivery_attempt_failed':
-      return 'PFM Shipment Delivery Attempt Failed';
+      return 'PFM Tracking - Failed Delivery Attempt';
     case 'shipment.exception':
-      return 'PFM Shipment Exception';
+      return 'PFM Tracking - Delivery Exception';
     case 'shipment.stalled':
-      return 'PFM Shipment Stalled';
+      return 'PFM Tracking - Stalled';
     default:
       return eventType;
   }

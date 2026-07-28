@@ -199,6 +199,8 @@ async function buildPayload(
     : null;
   const items = await loadItems(db, row.id, env.publicBaseUrl);
 
+  const carrierDescription = row.latest_description;
+
   return {
     event: eventType,
     email: row.customer_email,
@@ -214,7 +216,17 @@ async function buildPayload(
     edd: row.edd ? new Date(row.edd).toISOString() : null,
     destinationCountry: row.destination_country,
     internalStatus: row.internal_status,
-    latestDescription: row.latest_description,
+    latestDescription: carrierDescription,
+    // Narvar template aliases (see examples/klavio-events/)
+    carrier_description: carrierDescription,
+    shipment_status: carrierDescription,
+    package_status: carrierDescription,
+    notification_type:
+      eventType === 'shipment.delivery_attempt_failed'
+        ? 'exception_delivery_attempt_failed'
+        : eventType === 'shipment.exception'
+          ? 'exception'
+          : eventType.replace(/^shipment\./, ''),
     item_names: items.map((i) => i.name).filter(Boolean),
     items,
     dryRun: env.dryRun || !env.apiKey,
