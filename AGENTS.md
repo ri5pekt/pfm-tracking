@@ -75,13 +75,14 @@ Use TrackingMore’s Shipment Dashboard as the UX reference (not a brand clone):
 Minimum events (match live Narvar + additions):
 
 - `shipment.shipped` (new — label/tracking assigned)
+- `shipment.in_transit` (once per shipment when first reaching InTransit+)
 - `shipment.out_for_delivery`
 - `shipment.delivered`
 - `shipment.delivery_attempt_failed`
 - `shipment.exception`
 - `shipment.stalled`
 
-Do **not** emit on every InTransit scan — only meaningful transitions.
+Do **not** emit on every InTransit scan — once per shipment via `dedupe_key`.
 
 ## Secrets & safety
 

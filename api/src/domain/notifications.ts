@@ -4,6 +4,7 @@ import { resolveOrderTrackingUrl } from './public-tracking.js';
 
 export const NOTIFICATION_EVENT_TYPES = [
   'shipment.shipped',
+  'shipment.in_transit',
   'shipment.out_for_delivery',
   'shipment.delivered',
   'shipment.delivery_attempt_failed',
@@ -117,6 +118,10 @@ function candidateTypes(row: ShipmentNotifyRow): NotificationEventType[] {
 
   if (row.tracking_number && row.status_rank >= 30) {
     types.push('shipment.shipped');
+  }
+  // Once per shipment (dedupe_key); rank>=40 covers catch-up if we miss the IN_TRANSIT poll.
+  if (row.status_rank >= 40) {
+    types.push('shipment.in_transit');
   }
   if (row.internal_status === 'OUT_FOR_DELIVERY') {
     types.push('shipment.out_for_delivery');

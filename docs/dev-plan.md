@@ -447,6 +447,7 @@ Tracking API's call budget.
 ### Klaviyo (outbound)
 Events:
 - `shipment.shipped` (first `LABEL_CREATED`/tracking assigned)
+- `shipment.in_transit` (once when reaching `IN_TRANSIT` / rank ≥ 40 — matches Narvar)
 - `shipment.out_for_delivery`
 - `shipment.delivered`
 - `shipment.delivery_attempt_failed` — kept distinct from generic exception, matching Narvar's live flow split (§4)
