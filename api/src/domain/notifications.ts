@@ -223,7 +223,7 @@ async function buildPayload(
     package_status: carrierDescription,
     notification_type:
       eventType === 'shipment.delivery_attempt_failed'
-        ? 'exception_delivery_attempt_failed'
+        ? 'delivery_attempt_standard' // Narvar Failed Delivery Attempt
         : eventType === 'shipment.exception'
           ? 'exception'
           : eventType.replace(/^shipment\./, ''),
