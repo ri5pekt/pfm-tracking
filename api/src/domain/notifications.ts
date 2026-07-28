@@ -226,11 +226,13 @@ async function buildPayload(
         ? 'shipment_confirmation_standard' // Narvar In Transit
         : eventType === 'shipment.out_for_delivery'
           ? 'outfordelivery_standard'
-          : eventType === 'shipment.delivery_attempt_failed'
-            ? 'delivery_attempt_standard'
-            : eventType === 'shipment.exception'
-              ? 'exception'
-              : eventType.replace(/^shipment\./, ''),
+          : eventType === 'shipment.delivered'
+            ? 'delivered_standard'
+            : eventType === 'shipment.delivery_attempt_failed'
+              ? 'delivery_attempt_standard'
+              : eventType === 'shipment.exception'
+                ? 'exception'
+                : eventType.replace(/^shipment\./, ''),
     item_names: items.map((i) => i.name).filter(Boolean),
     items,
     dryRun: env.dryRun || !env.apiKey,

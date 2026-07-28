@@ -79,13 +79,13 @@ export class KlaviyoClient {
 export function klaviyoMetricName(eventType: string): string {
   switch (eventType) {
     case 'shipment.shipped':
-      return 'PFM Shipment Shipped';
+      return 'PFM Tracking - Shipped';
     case 'shipment.in_transit':
       return 'PFM Tracking - In Transit';
     case 'shipment.out_for_delivery':
       return 'PFM Tracking - Out For Delivery';
     case 'shipment.delivered':
-      return 'PFM Shipment Delivered';
+      return 'PFM Tracking - Received Delivery';
     case 'shipment.delivery_attempt_failed':
       return 'PFM Tracking - Failed Delivery Attempt';
     case 'shipment.exception':
