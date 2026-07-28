@@ -173,19 +173,24 @@ const canRetrack = computed(() => {
   return s?.aggregator === 'trackingmore' && Boolean(s.tracking_number);
 });
 
+const DISPLAY_TZ = 'Asia/Jerusalem';
+
 function formatWhen(value: string | null | undefined) {
   if (!value) return '—';
-  return new Date(value).toLocaleString();
+  const d = new Date(value);
+  if (Number.isNaN(d.getTime())) return '—';
+  return d.toLocaleString('en-GB', { timeZone: DISPLAY_TZ });
 }
 
 function formatDate(value: string | null | undefined) {
   if (!value) return '—';
   const d = new Date(value);
   if (Number.isNaN(d.getTime())) return '—';
-  return d.toLocaleDateString(undefined, {
+  return d.toLocaleDateString('en-GB', {
     year: 'numeric',
     month: 'short',
     day: 'numeric',
+    timeZone: DISPLAY_TZ,
   });
 }
 
@@ -194,15 +199,18 @@ function formatDateParts(value: string | null | undefined): { date: string; time
   const d = new Date(value);
   if (Number.isNaN(d.getTime())) return { date: '—', time: null };
   return {
-    date: d.toLocaleDateString(undefined, {
+    date: d.toLocaleDateString('en-GB', {
       year: 'numeric',
       month: 'short',
       day: 'numeric',
+      timeZone: DISPLAY_TZ,
     }),
-    time: d.toLocaleTimeString(undefined, {
+    time: d.toLocaleTimeString('en-GB', {
       hour: '2-digit',
       minute: '2-digit',
       second: '2-digit',
+      hour12: false,
+      timeZone: DISPLAY_TZ,
     }),
   };
 }
@@ -211,12 +219,20 @@ function formatDateGmt(value: string | null | undefined) {
   if (!value) return '—';
   const d = new Date(value);
   if (Number.isNaN(d.getTime())) return '—';
-  return `${d.toLocaleDateString('en-US', {
+  const date = d.toLocaleDateString('en-GB', {
     year: 'numeric',
     month: 'short',
     day: 'numeric',
-    timeZone: 'UTC',
-  })} (GMT+0)`;
+    timeZone: DISPLAY_TZ,
+  });
+  const time = d.toLocaleTimeString('en-GB', {
+    hour: '2-digit',
+    minute: '2-digit',
+    second: '2-digit',
+    hour12: false,
+    timeZone: DISPLAY_TZ,
+  });
+  return `${date} ${time} (Israel)`;
 }
 
 function formatTimelineWhen(value: string | null | undefined) {
@@ -227,11 +243,13 @@ function formatTimelineWhen(value: string | null | undefined) {
     month: 'short',
     day: 'numeric',
     year: 'numeric',
+    timeZone: DISPLAY_TZ,
   });
   const time = d.toLocaleTimeString('en-US', {
     hour: '2-digit',
     minute: '2-digit',
     hour12: false,
+    timeZone: DISPLAY_TZ,
   });
   return `${date} at ${time}`;
 }
