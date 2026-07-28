@@ -733,11 +733,6 @@ onMounted(() => {
             </div>
           </section>
 
-          <p v-if="detail.shipment.destination_country" class="origin-line">
-            Destination country is
-            <strong>{{ String(detail.shipment.destination_country).toUpperCase() }}</strong>
-          </p>
-
           <section class="details-card">
             <div class="details-card-header">
               <h3>Shipment details</h3>
@@ -818,24 +813,46 @@ onMounted(() => {
                 <dd>{{ formatDate(String(detail.shipment.edd ?? '')) }}</dd>
               </div>
               <div class="details-row">
-                <dt>Customer</dt>
+                <dt>Customer name</dt>
+                <dd>{{ detailValue(detail.shipment.customer_name) }}</dd>
+              </div>
+              <div class="details-row">
+                <dt>Email</dt>
                 <dd>
-                  {{
-                    detail.shipment.customer_name || detail.shipment.customer_email
-                      ? [detail.shipment.customer_name, detail.shipment.customer_email]
-                          .filter(Boolean)
-                          .join(' · ')
-                      : 'No customer'
-                  }}
+                  <a
+                    v-if="detail.shipment.customer_email"
+                    class="detail-link"
+                    :href="`mailto:${String(detail.shipment.customer_email)}`"
+                  >{{ String(detail.shipment.customer_email) }}</a>
+                  <template v-else>—</template>
                 </dd>
               </div>
               <div class="details-row">
-                <dt>Destination</dt>
+                <dt>Phone</dt>
+                <dd>
+                  <a
+                    v-if="detail.shipment.customer_phone"
+                    class="detail-link"
+                    :href="`tel:${String(detail.shipment.customer_phone)}`"
+                  >{{ String(detail.shipment.customer_phone) }}</a>
+                  <template v-else>—</template>
+                </dd>
+              </div>
+              <div class="details-row">
+                <dt>City</dt>
+                <dd>{{ detailValue(detail.shipment.destination_city) }}</dd>
+              </div>
+              <div class="details-row">
+                <dt>Postcode</dt>
+                <dd>{{ detailValue(detail.shipment.destination_postcode) }}</dd>
+              </div>
+              <div class="details-row">
+                <dt>Country</dt>
                 <dd>
                   {{
-                    [detail.shipment.destination_city, detail.shipment.destination_country]
-                      .filter(Boolean)
-                      .join(', ') || '—'
+                    detail.shipment.destination_country
+                      ? String(detail.shipment.destination_country).toUpperCase()
+                      : '—'
                   }}
                 </dd>
               </div>
@@ -1045,6 +1062,14 @@ onMounted(() => {
 .link-btn:disabled {
   opacity: 0.6;
   cursor: wait;
+}
+.detail-link {
+  color: #2563eb;
+  text-decoration: none;
+  word-break: break-all;
+}
+.detail-link:hover {
+  text-decoration: underline;
 }
 .raw-payload-list {
   display: grid;
