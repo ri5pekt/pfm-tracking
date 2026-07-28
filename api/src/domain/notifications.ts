@@ -59,20 +59,45 @@ type ShipmentNotifyRow = {
   carrier_code: string | null;
   carrier_tracking_url: string | null;
   edd: Date | null;
+  shipped_at: Date | null;
   order_number: string;
+  ordered_at: Date | null;
   customer_email: string | null;
   customer_name: string | null;
+  customer_phone: string | null;
+  destination_city: string | null;
   destination_country: string | null;
+  destination_postcode: string | null;
   carrier_name: string | null;
   latest_raw_status: string | null;
   latest_description: string | null;
 };
 
+function splitName(full: string | null): { first_name: string; last_name: string } {
+  const parts = (full ?? '').trim().split(/\s+/).filter(Boolean);
+  if (!parts.length) return { first_name: '', last_name: '' };
+  if (parts.length === 1) return { first_name: parts[0]!, last_name: '' };
+  return { first_name: parts[0]!, last_name: parts.slice(1).join(' ') };
+}
+
+function formatNarvarDate(value: Date | string | null | undefined): string {
+  if (!value) return '';
+  const d = value instanceof Date ? value : new Date(value);
+  if (Number.isNaN(d.getTime())) return '';
+  return d.toLocaleDateString('en-US', {
+    weekday: 'long',
+    month: 'long',
+    day: 'numeric',
+    timeZone: 'UTC',
+  });
+}
+
 async function loadShipment(db: Db, shipmentId: string): Promise<ShipmentNotifyRow | null> {
   const { rows } = await db.query<ShipmentNotifyRow>(
     `SELECT s.id, s.order_id, s.internal_status, s.status_rank, s.is_stalled,
-            s.tracking_number, s.carrier_code, s.carrier_tracking_url, s.edd,
-            o.order_number, o.customer_email, o.customer_name, o.destination_country,
+            s.tracking_number, s.carrier_code, s.carrier_tracking_url, s.edd, s.shipped_at,
+            o.order_number, o.ordered_at, o.customer_email, o.customer_name, o.customer_phone,
+            o.destination_city, o.destination_country, o.destination_postcode,
             c.display_name AS carrier_name,
             (
               SELECT te.raw_status FROM tracking_events te
@@ -199,42 +224,95 @@ async function buildPayload(
     : null;
   const items = await loadItems(db, row.id, env.publicBaseUrl);
 
-  const carrierDescription = row.latest_description;
+  const carrierDescription = row.latest_description ?? '';
+  const carrier = row.carrier_name ?? row.carrier_code ?? '';
+  const trackingNumber = row.tracking_number ?? '';
+  const eddIso = row.edd ? new Date(row.edd).toISOString() : null;
+  const { first_name, last_name } = splitName(row.customer_name);
+  const shipTo = {
+    first_name,
+    last_name,
+    email: row.customer_email ?? '',
+    phone: row.customer_phone ?? '',
+    phone_extension: '',
+    line1: '',
+    line2: '',
+    line3: '',
+    city: row.destination_city ?? '',
+    state: '',
+    zip: row.destination_postcode ?? '',
+    country: row.destination_country ?? '',
+    fax: '',
+    language: '',
+  };
 
-  return {
-    event: eventType,
-    email: row.customer_email,
-    customerName: row.customer_name,
-    orderNumber: row.order_number,
-    order_number: row.order_number,
-    trackingPageUrl,
-    tracking_url: trackingPageUrl,
-    carrier: row.carrier_name ?? row.carrier_code,
-    trackingNumber: row.tracking_number,
-    tracking_number: row.tracking_number,
-    carrierTrackingUrl: row.carrier_tracking_url,
-    edd: row.edd ? new Date(row.edd).toISOString() : null,
-    destinationCountry: row.destination_country,
-    internalStatus: row.internal_status,
-    latestDescription: carrierDescription,
-    // Narvar template aliases (see examples/klavio-events/)
+  // Narvar templates read event.shipments.0.* — keep a matching nested shape.
+  const shipmentBlock = {
+    carrier,
     carrier_description: carrierDescription,
     shipment_status: carrierDescription,
     package_status: carrierDescription,
-    notification_type:
-      eventType === 'shipment.in_transit'
-        ? 'shipment_confirmation_standard' // Narvar In Transit
-        : eventType === 'shipment.out_for_delivery'
-          ? 'outfordelivery_standard'
-          : eventType === 'shipment.delivered'
-            ? 'delivered_standard'
-            : eventType === 'shipment.delivery_attempt_failed'
-              ? 'delivery_attempt_standard'
-              : eventType === 'shipment.exception'
-                ? 'exception'
-                : eventType.replace(/^shipment\./, ''),
+    tracking_number: trackingNumber,
+    tracking_url: trackingPageUrl ?? '',
+    tiny_tracking_url: trackingPageUrl ?? '',
+    carrier_tracking_url: row.carrier_tracking_url ?? '',
+    edd: eddIso ? formatNarvarDate(row.edd) : '',
+    edd_iso: eddIso,
+    ship_date: formatNarvarDate(row.shipped_at ?? row.ordered_at),
+    notification_date: new Date().toLocaleDateString('en-US', {
+      month: '2-digit',
+      day: '2-digit',
+      year: 'numeric',
+      timeZone: 'UTC',
+    }),
+    lookup_id: trackingNumber.toLowerCase(),
+    ship_to: shipTo,
+    items,
+  };
+
+  const notificationType =
+    eventType === 'shipment.in_transit'
+      ? 'shipment_confirmation_standard'
+      : eventType === 'shipment.out_for_delivery'
+        ? 'outfordelivery_standard'
+        : eventType === 'shipment.delivered'
+          ? 'delivered_standard'
+          : eventType === 'shipment.delivery_attempt_failed'
+            ? 'delivery_attempt_standard'
+            : eventType === 'shipment.exception'
+              ? 'exception'
+              : eventType.replace(/^shipment\./, '');
+
+  return {
+    event: eventType,
+    version: 'v1-pfm-tracking',
+    email: row.customer_email,
+    phone: row.customer_phone,
+    customerName: row.customer_name,
+    orderNumber: row.order_number,
+    order_number: row.order_number,
+    placement_date: formatNarvarDate(row.ordered_at),
+    trackingPageUrl,
+    tracking_url: trackingPageUrl,
+    carrier,
+    trackingNumber,
+    tracking_number: trackingNumber,
+    carrierTrackingUrl: row.carrier_tracking_url,
+    edd: eddIso,
+    destinationCountry: row.destination_country,
+    internalStatus: row.internal_status,
+    latestDescription: carrierDescription || null,
+    carrier_description: carrierDescription,
+    shipment_status: carrierDescription,
+    package_status: carrierDescription,
+    notification_type: notificationType,
+    notification_triggered_by_tracking_number: trackingNumber,
+    notification_lookup_id: trackingNumber.toLowerCase(),
+    multi_shipment_count: '0',
+    multi_shipment: [],
     item_names: items.map((i) => i.name).filter(Boolean),
     items,
+    shipments: [shipmentBlock],
     dryRun: env.dryRun || !env.apiKey,
   };
 }
