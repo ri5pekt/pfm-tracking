@@ -10,6 +10,7 @@ export const CARRIER_LOGOS: Record<string, string> = {
   speedx: '/carriers/speedx.png',
   cirro: '/carriers/cirro.png',
   osm_worldwide: '/carriers/osm.png',
+  better_trucks: '/carriers/better-trucks.png',
 };
 
 export function carrierLogo(code: string | null | undefined): string | null {
