@@ -747,7 +747,11 @@
         const parts = heroParts(heroIso);
         const tone = statusTone(shipment.status);
         const barLabel =
-          shipment.status === 'DELIVERED' || shipment.edd ? 'Delivery date' : 'Shipment status';
+          shipment.status === 'DELIVERED'
+            ? 'Delivery date'
+            : shipment.edd
+              ? 'Estimated Delivery'
+              : 'Shipment status';
         const dest = destination(data);
         const trackLink = shipment.trackingUrl
           ? `<a href="${escapeAttr(shipment.trackingUrl)}" target="_blank" rel="noopener">Track with carrier</a>`
