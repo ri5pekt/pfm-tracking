@@ -61,6 +61,7 @@ export function fetchVersion() {
 export function fetchShipments(params?: {
   q?: string;
   status?: string;
+  source?: string;
   page?: number;
   pageSize?: number;
   sortBy?: string;
@@ -69,6 +70,7 @@ export function fetchShipments(params?: {
   const sp = new URLSearchParams();
   if (params?.q) sp.set('q', params.q);
   if (params?.status && params.status !== 'all') sp.set('status', params.status);
+  if (params?.source && params.source !== 'all') sp.set('source', params.source);
   if (params?.page) sp.set('page', String(params.page));
   if (params?.pageSize) sp.set('pageSize', String(params.pageSize));
   if (params?.sortBy) sp.set('sortBy', params.sortBy);

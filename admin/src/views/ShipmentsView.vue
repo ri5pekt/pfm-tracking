@@ -10,6 +10,7 @@ const route = useRoute();
 const counts = ref<Record<string, number>>({});
 const items = ref<ShipmentListItem[]>([]);
 const total = ref(0);
+const activeSource = ref('all');
 const activeTab = ref('all');
 const search = ref('');
 const loading = ref(false);
@@ -31,6 +32,12 @@ const trackingLinkBusy = ref(false);
 const retrackBusy = ref(false);
 const replayBusyId = ref<string | null>(null);
 const TIMELINE_PREVIEW = 5;
+
+const sources = [
+  { key: 'all', label: 'All' },
+  { key: 'shipbob', label: 'ShipBob' },
+  { key: 'klb', label: 'KLB' },
+];
 
 const tabs = [
   { key: 'all', label: 'All' },
@@ -70,6 +77,7 @@ async function load() {
   try {
     const data = await fetchShipments({
       q: search.value || undefined,
+      source: activeSource.value,
       status: activeTab.value,
       page: page.value,
       pageSize: pageSize.value,
@@ -87,6 +95,12 @@ async function load() {
 }
 
 function onSearch() {
+  page.value = 1;
+  void load();
+}
+
+function onSource(key: string) {
+  activeSource.value = key;
   page.value = 1;
   void load();
 }
@@ -349,6 +363,18 @@ onMounted(() => {
 <template>
   <AdminLayout title="Shipments">
     <div class="panel">
+      <div class="tabs source-tabs">
+        <button
+          v-for="src in sources"
+          :key="src.key"
+          class="tab"
+          :class="{ active: activeSource === src.key }"
+          type="button"
+          @click="onSource(src.key)"
+        >
+          {{ src.label }}
+        </button>
+      </div>
       <div class="tabs">
         <button
           v-for="tab in tabs"
@@ -822,6 +848,10 @@ onMounted(() => {
 </template>
 
 <style scoped>
+.source-tabs {
+  border-bottom: 1px solid var(--line);
+  padding-bottom: 8px;
+}
 .muted {
   color: var(--muted);
   font-size: 0.85rem;

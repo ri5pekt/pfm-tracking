@@ -21,6 +21,7 @@ export async function registerAdminShipmentRoutes(
     const query = request.query as {
       q?: string;
       status?: string;
+      source?: string;
       page?: string;
       pageSize?: string;
       limit?: string;
@@ -55,6 +56,18 @@ export async function registerAdminShipmentRoutes(
 
     const q = query.q?.trim() || null;
     const statusTab = query.status?.trim() || 'all';
+    const sourceRaw = (query.source?.trim() || 'all').toLowerCase();
+    const sourceFilter =
+      sourceRaw === 'shipbob' || sourceRaw === 'klb' ? sourceRaw : 'all';
+
+    const countParams: unknown[] = [];
+    const countWhere =
+      sourceFilter === 'all'
+        ? ''
+        : (() => {
+            countParams.push(sourceFilter);
+            return `WHERE source = $1`;
+          })();
 
     const countsResult = await db.query<{
       all: string;
@@ -81,11 +94,18 @@ export async function registerAdminShipmentRoutes(
          count(*) FILTER (WHERE internal_status = 'DELIVERED')::text AS delivered,
          count(*) FILTER (WHERE internal_status = 'RETURNED_TO_SENDER')::text AS returned_to_sender,
          count(*) FILTER (WHERE internal_status = 'CANCELLED')::text AS cancelled
-       FROM shipments`,
+       FROM shipments
+       ${countWhere}`,
+      countParams,
     );
 
     const filters: string[] = [];
     const params: unknown[] = [];
+
+    if (sourceFilter !== 'all') {
+      params.push(sourceFilter);
+      filters.push(`s.source = $${params.length}`);
+    }
 
     const statusFilters: Record<string, string> = {
       order_received: `s.internal_status = 'ORDER_RECEIVED'`,
