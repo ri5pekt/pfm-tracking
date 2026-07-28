@@ -81,7 +81,7 @@ export function klaviyoMetricName(eventType: string): string {
     case 'shipment.shipped':
       return 'PFM Shipment Shipped';
     case 'shipment.in_transit':
-      return 'PFM Shipment In Transit';
+      return 'PFM Tracking - In Transit';
     case 'shipment.out_for_delivery':
       return 'PFM Shipment Out For Delivery';
     case 'shipment.delivered':
