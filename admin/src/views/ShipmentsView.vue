@@ -430,6 +430,10 @@ onMounted(() => {
                     :src="carrierLogo(row.carrier_code)!"
                     :alt="row.carrier_name ?? row.carrier_code ?? 'Carrier'"
                     :title="row.carrier_name ?? row.carrier_code ?? ''"
+                    width="36"
+                    height="36"
+                    loading="lazy"
+                    decoding="async"
                   />
                   <div class="carrier-text">
                     <div>{{ row.carrier_name ?? row.carrier_code ?? '—' }}</div>
@@ -931,16 +935,17 @@ onMounted(() => {
   min-width: 0;
 }
 .carrier-logo {
-  width: 28px;
-  height: 28px;
+  width: 36px;
+  height: 36px;
   object-fit: contain;
+  object-position: center;
   flex-shrink: 0;
-  border-radius: 4px;
+  border-radius: 6px;
   background: #fff;
 }
 .carrier-logo--sm {
-  width: 20px;
-  height: 20px;
+  width: 24px;
+  height: 24px;
 }
 .carrier-text {
   min-width: 0;
