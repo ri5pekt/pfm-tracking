@@ -50,7 +50,7 @@ export async function registerAdminShipmentRoutes(
       source: 's.source',
       last_event_at: 's.last_event_at',
     };
-    const sortByKey = query.sortBy && sortMap[query.sortBy] ? query.sortBy : 'last_event_at';
+    const sortByKey = query.sortBy && sortMap[query.sortBy] ? query.sortBy : 'order_imported_at';
     const sortExpr = sortMap[sortByKey];
 
     const q = query.q?.trim() || null;

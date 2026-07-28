@@ -15,7 +15,7 @@ const search = ref('');
 const loading = ref(false);
 const page = ref(1);
 const pageSize = ref(20);
-const sortBy = ref('last_event_at');
+const sortBy = ref('order_imported_at');
 const sortDir = ref<'asc' | 'desc'>('desc');
 const pageSizeOptions = [20, 50, 100];
 const selectedId = ref<string | null>(null);
@@ -187,6 +187,24 @@ function formatDate(value: string | null | undefined) {
     month: 'short',
     day: 'numeric',
   });
+}
+
+function formatDateParts(value: string | null | undefined): { date: string; time: string | null } {
+  if (!value) return { date: '—', time: null };
+  const d = new Date(value);
+  if (Number.isNaN(d.getTime())) return { date: '—', time: null };
+  return {
+    date: d.toLocaleDateString(undefined, {
+      year: 'numeric',
+      month: 'short',
+      day: 'numeric',
+    }),
+    time: d.toLocaleTimeString(undefined, {
+      hour: '2-digit',
+      minute: '2-digit',
+      second: '2-digit',
+    }),
+  };
 }
 
 function formatDateGmt(value: string | null | undefined) {
@@ -411,8 +429,18 @@ onMounted(() => {
                 </span>
                 <span v-if="row.is_stalled" class="stalled-chip">Stalled</span>
               </td>
-              <td class="date-cell">{{ formatDate(row.order_created_at) }}</td>
-              <td class="date-cell">{{ formatDate(row.order_imported_at) }}</td>
+              <td class="date-cell">
+                <div v-for="parts in [formatDateParts(row.order_created_at)]" :key="'oc-' + row.id">
+                  <div>{{ parts.date }}</div>
+                  <div v-if="parts.time" class="muted">{{ parts.time }}</div>
+                </div>
+              </td>
+              <td class="date-cell">
+                <div v-for="parts in [formatDateParts(row.order_imported_at)]" :key="'oi-' + row.id">
+                  <div>{{ parts.date }}</div>
+                  <div v-if="parts.time" class="muted">{{ parts.time }}</div>
+                </div>
+              </td>
               <td>
                 <div>{{ row.latest_event_description ?? '—' }}</div>
                 <div class="muted">
@@ -823,6 +851,10 @@ onMounted(() => {
 .date-cell {
   white-space: nowrap;
   font-size: 0.9rem;
+  line-height: 1.35;
+}
+.date-cell .muted {
+  font-size: 0.82rem;
 }
 .status-tag {
   display: inline-flex;
