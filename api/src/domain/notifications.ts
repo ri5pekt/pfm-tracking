@@ -166,21 +166,78 @@ async function loadItems(db: Db, shipmentId: string, publicBaseUrl: string) {
         image && image.startsWith('/')
           ? `${base}${image}`
           : image;
+      const name = i.title ?? '';
+      const description = i.description ?? '';
+      const itemUrl = i.product_url ?? '';
+      // Narvar item shape (string quantities / empty stubs) + PFM aliases
       return {
-        // Narvar-compatible names for Klaviyo flow templates
         product_sku: i.sku,
-        name: i.title,
-        description: i.description,
-        item_url: i.product_url,
-        image_url: imageUrl,
-        quantity: i.quantity,
-        // camelCase aliases (existing PFM shape)
+        product_id: '',
+        item_id: '',
+        name,
+        description,
+        item_description: description,
+        item_url: itemUrl,
+        image_url: imageUrl ?? '',
+        quantity: String(i.quantity),
+        price: '',
+        size: '',
+        color: '',
+        discount_amount: '',
+        discount_percent: '',
+        // PFM aliases
         sku: i.sku,
-        title: i.title,
-        imageUrl,
-        itemUrl: i.product_url,
+        title: name,
+        imageUrl: imageUrl ?? '',
+        itemUrl,
       };
     });
+}
+
+async function countOrderShipments(db: Db, orderId: string): Promise<number> {
+  const { rows } = await db.query<{ n: string }>(
+    `SELECT count(*)::text AS n FROM shipments WHERE order_id = $1`,
+    [orderId],
+  );
+  return Number(rows[0]?.n ?? 1);
+}
+
+function emptyAddress() {
+  return {
+    first_name: '',
+    last_name: '',
+    email: '',
+    phone: '',
+    phone_extension: '',
+    line1: '',
+    line2: '',
+    line3: '',
+    city: '',
+    state: '',
+    zip: '',
+    country: '',
+    fax: '',
+    language: '',
+  };
+}
+
+function notificationTypeFor(eventType: NotificationEventType): string {
+  switch (eventType) {
+    case 'shipment.in_transit':
+      return 'shipment_confirmation_standard';
+    case 'shipment.out_for_delivery':
+      return 'outfordelivery_standard';
+    case 'shipment.delivered':
+      return 'delivered_standard';
+    case 'shipment.delivery_attempt_failed':
+      return 'delivery_attempt_standard';
+    case 'shipment.exception':
+      return 'exception_undeliverable';
+    case 'shipment.shipped':
+      return 'shipped';
+    case 'shipment.stalled':
+      return 'stalled';
+  }
 }
 
 function candidateTypes(row: ShipmentNotifyRow): NotificationEventType[] {
@@ -223,30 +280,34 @@ async function buildPayload(
     ? await resolveOrderTrackingUrl(db, row.order_id, env.tokenSecret, env.publicBaseUrl)
     : null;
   const items = await loadItems(db, row.id, env.publicBaseUrl);
+  const shipmentCount = await countOrderShipments(db, row.order_id);
 
+  const now = new Date();
   const carrierDescription = row.latest_description ?? '';
   const carrier = row.carrier_name ?? row.carrier_code ?? '';
   const trackingNumber = row.tracking_number ?? '';
   const eddIso = row.edd ? new Date(row.edd).toISOString() : null;
   const { first_name, last_name } = splitName(row.customer_name);
   const shipTo = {
+    ...emptyAddress(),
     first_name,
     last_name,
     email: row.customer_email ?? '',
     phone: row.customer_phone ?? '',
-    phone_extension: '',
-    line1: '',
-    line2: '',
-    line3: '',
     city: row.destination_city ?? '',
-    state: '',
     zip: row.destination_postcode ?? '',
     country: row.destination_country ?? '',
-    fax: '',
-    language: '',
   };
 
-  // Narvar templates read event.shipments.0.* — keep a matching nested shape.
+  const notificationDateShort = now.toLocaleDateString('en-US', {
+    month: '2-digit',
+    day: '2-digit',
+    year: 'numeric',
+    timeZone: 'UTC',
+  });
+  const publishedDate = now.toISOString();
+
+  // Narvar templates: event.shipments.0.*
   const shipmentBlock = {
     carrier,
     carrier_description: carrierDescription,
@@ -259,41 +320,49 @@ async function buildPayload(
     edd: eddIso ? formatNarvarDate(row.edd) : '',
     edd_iso: eddIso,
     ship_date: formatNarvarDate(row.shipped_at ?? row.ordered_at),
-    notification_date: new Date().toLocaleDateString('en-US', {
-      month: '2-digit',
-      day: '2-digit',
-      year: 'numeric',
-      timeZone: 'UTC',
-    }),
+    notification_date: notificationDateShort,
     lookup_id: trackingNumber.toLowerCase(),
+    nauth: '',
     ship_to: shipTo,
     items,
   };
 
-  const notificationType =
-    eventType === 'shipment.in_transit'
-      ? 'shipment_confirmation_standard'
-      : eventType === 'shipment.out_for_delivery'
-        ? 'outfordelivery_standard'
-        : eventType === 'shipment.delivered'
-          ? 'delivered_standard'
-          : eventType === 'shipment.delivery_attempt_failed'
-            ? 'delivery_attempt_standard'
-            : eventType === 'shipment.exception'
-              ? 'exception'
-              : eventType.replace(/^shipment\./, '');
+  const notificationType = notificationTypeFor(eventType);
+  const itemNames = items.map((i) => String(i.name ?? '')).filter(Boolean);
 
   return {
+    // Identity / Narvar envelope
+    version: 'v1-notification-webhook',
     event: eventType,
-    version: 'v1-pfm-tracking',
-    email: row.customer_email,
-    phone: row.customer_phone,
-    customerName: row.customer_name,
-    orderNumber: row.order_number,
+    notification_type: notificationType,
+    notification_locale: 'en_US',
+    notification_date: publishedDate,
+    published_date: publishedDate,
+    notification_triggered_by_tracking_number: trackingNumber,
+    notification_lookup_id: trackingNumber.toLowerCase(),
     order_number: row.order_number,
+    orderNumber: row.order_number,
     placement_date: formatNarvarDate(row.ordered_at),
+    phone: row.customer_phone ?? '',
+    email: row.customer_email,
+    customerName: row.customer_name,
+    billed_to: emptyAddress(),
+    pickups: {
+      current_pickup: null,
+      other_pickups: [],
+      pickups_delivered: [],
+    },
+    payments: null,
+    amount: '',
+    tax_amount: '',
+    tax_rate: '',
+    multi_shipment_count: String(Math.max(0, shipmentCount - 1)),
+    multi_shipment: [],
+
+    // Flat aliases (PFM + template convenience)
     trackingPageUrl,
     tracking_url: trackingPageUrl,
+    tiny_tracking_url: trackingPageUrl,
     carrier,
     trackingNumber,
     tracking_number: trackingNumber,
@@ -305,12 +374,7 @@ async function buildPayload(
     carrier_description: carrierDescription,
     shipment_status: carrierDescription,
     package_status: carrierDescription,
-    notification_type: notificationType,
-    notification_triggered_by_tracking_number: trackingNumber,
-    notification_lookup_id: trackingNumber.toLowerCase(),
-    multi_shipment_count: '0',
-    multi_shipment: [],
-    item_names: items.map((i) => i.name).filter(Boolean),
+    item_names: itemNames,
     items,
     shipments: [shipmentBlock],
     dryRun: env.dryRun || !env.apiKey,
