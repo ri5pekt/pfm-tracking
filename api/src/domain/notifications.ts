@@ -222,11 +222,15 @@ async function buildPayload(
     shipment_status: carrierDescription,
     package_status: carrierDescription,
     notification_type:
-      eventType === 'shipment.delivery_attempt_failed'
-        ? 'delivery_attempt_standard' // Narvar Failed Delivery Attempt
-        : eventType === 'shipment.exception'
-          ? 'exception'
-          : eventType.replace(/^shipment\./, ''),
+      eventType === 'shipment.in_transit'
+        ? 'shipment_confirmation_standard' // Narvar In Transit
+        : eventType === 'shipment.out_for_delivery'
+          ? 'outfordelivery_standard'
+          : eventType === 'shipment.delivery_attempt_failed'
+            ? 'delivery_attempt_standard'
+            : eventType === 'shipment.exception'
+              ? 'exception'
+              : eventType.replace(/^shipment\./, ''),
     item_names: items.map((i) => i.name).filter(Boolean),
     items,
     dryRun: env.dryRun || !env.apiKey,
