@@ -56,7 +56,13 @@ export function setSession(reply: FastifyReply, user: SessionUser, secret: strin
 }
 
 export function clearSession(reply: FastifyReply): void {
-  reply.clearCookie(COOKIE_NAME, { path: '/' });
+  // Must match setSession attributes or the browser keeps the cookie.
+  reply.clearCookie(COOKIE_NAME, {
+    path: '/',
+    httpOnly: true,
+    sameSite: 'lax',
+    secure: process.env.NODE_ENV === 'production',
+  });
 }
 
 export function getSession(request: FastifyRequest, secret: string): SessionUser | null {

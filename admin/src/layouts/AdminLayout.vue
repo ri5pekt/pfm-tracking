@@ -16,8 +16,12 @@ onMounted(async () => {
 });
 
 async function onLogout() {
-  await logout();
-  router.push('/login');
+  try {
+    await logout();
+  } catch {
+    // Still leave the UI even if the API call fails; cookie clear is best-effort.
+  }
+  await router.replace('/login');
 }
 </script>
 

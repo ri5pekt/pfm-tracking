@@ -95,12 +95,16 @@ export async function registerAdminAuthRoutes(app: FastifyInstance, deps: AuthDe
     const user = getSession(request, env.ADMIN_SESSION_SECRET);
     clearSession(reply);
     if (user) {
-      await writeAudit(db, {
-        actorId: user.id,
-        action: 'admin.logout',
-        targetType: 'admin_user',
-        targetId: user.id,
-      });
+      try {
+        await writeAudit(db, {
+          actorId: user.id,
+          action: 'admin.logout',
+          targetType: 'admin_user',
+          targetId: user.id,
+        });
+      } catch (err) {
+        request.log.warn({ err }, 'admin.logout audit failed');
+      }
     }
     return { ok: true };
   });
