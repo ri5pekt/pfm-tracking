@@ -243,9 +243,10 @@ function notificationTypeFor(eventType: NotificationEventType): string {
 function candidateTypes(row: ShipmentNotifyRow): NotificationEventType[] {
   const types: NotificationEventType[] = [];
 
-  if (row.tracking_number && row.status_rank >= 30) {
-    types.push('shipment.shipped');
-  }
+  // Narvar-aligned: no separate "shipped"/label email — first tracking email is In Transit.
+  // if (row.tracking_number && row.status_rank >= 30) {
+  //   types.push('shipment.shipped');
+  // }
   // Once per shipment (dedupe_key); rank>=40 covers catch-up if we miss the IN_TRANSIT poll.
   if (row.status_rank >= 40) {
     types.push('shipment.in_transit');
