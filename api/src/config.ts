@@ -35,6 +35,10 @@ const envSchema = z.object({
   KLAVIYO_DRY_RUN: z.string().optional(),
   STALLED_DAYS: z.coerce.number().default(7),
   RICHPANEL_API_KEY: z.string().optional(),
+  /** Shared secret for pfm-shopify-ops read-only shipment lookup (`docs/ops-api-spec.md`). */
+  OPS_API_KEY: z.string().optional(),
+  /** Shared secret for GET /api/v1/orders/:orderId (Woo order id → status/carrier). */
+  EXTERNAL_API_KEY: z.string().optional(),
 });
 
 export type Env = z.infer<typeof envSchema>;
