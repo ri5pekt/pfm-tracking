@@ -56,6 +56,14 @@ const STANDARD_MIN_INTERVAL_MS = 110; // ~9/s — under 10/s
 const COOLDOWN_MS = 120_000;
 export const TM_BATCH_MAX = 40;
 
+/**
+ * Real carrier tracking numbers we've seen (ShipBob/KLB/DHL/USPS/UPS) are plain alphanumeric,
+ * 4–40 chars. Anything else (dots, plus signs, spaces, commas — e.g. spreadsheet-mangled
+ * scientific notation like "9.40011E+21") is data corruption upstream, not a real tracking
+ * number, and must never be sent to TrackingMore's batch GET (see `getTrackings`).
+ */
+export const TRACKING_NUMBER_SHAPE = /^[A-Za-z0-9]{4,40}$/;
+
 function sleep(ms: number): Promise<void> {
   return new Promise((r) => setTimeout(r, ms));
 }
@@ -217,18 +225,34 @@ export class TrackingMoreClient {
   /**
    * Get up to 40 trackings in one call (comma-separated tracking_numbers).
    * Missing / 4102 numbers are omitted from the map (not thrown).
+   *
+   * TrackingMore's GET endpoint (unlike batch create) has no per-item success/error split —
+   * if even ONE tracking_number in the comma-joined list is malformed, the whole request 400s
+   * (code 4110 "The value of tracking_number is invalid"), which previously killed the entire
+   * poll/enrich run for every shipment in that batch. Seen live 2026-09: a shipment record with
+   * tracking_number corrupted to Excel-style scientific notation ("9.40011E+21") silently blocked
+   * both `trackingmore.poll` and `klb.sync`'s enrichment for weeks. Filter obviously-invalid
+   * values out before sending so one bad row can never take down the rest of the batch again —
+   * it just comes back "missing" for that shipment, same as an unregistered tracking number.
    */
   async getTrackings(trackingNumbers: string[]): Promise<Map<string, TrackingMoreTracking>> {
     const out = new Map<string, TrackingMoreTracking>();
     const unique = [...new Set(trackingNumbers.map((t) => t.trim()).filter(Boolean))];
-    if (unique.length === 0) return out;
-    if (unique.length > TM_BATCH_MAX) {
+    const valid = unique.filter((t) => TRACKING_NUMBER_SHAPE.test(t));
+    const invalid = unique.filter((t) => !TRACKING_NUMBER_SHAPE.test(t));
+    if (invalid.length > 0) {
+      console.warn(
+        `[trackingmore] skipping malformed tracking_number(s), never sent to TM: ${invalid.join(', ')}`,
+      );
+    }
+    if (valid.length === 0) return out;
+    if (valid.length > TM_BATCH_MAX) {
       throw new Error(`TrackingMore get allows max ${TM_BATCH_MAX} tracking_numbers`);
     }
 
     await this.acquire('standard');
     const url = new URL(`${this.opts.apiBase.replace(/\/$/, '')}/trackings/get`);
-    url.searchParams.set('tracking_numbers', unique.join(','));
+    url.searchParams.set('tracking_numbers', valid.join(','));
 
     const res = await loggedFetch(url.toString(), {
       integration: 'trackingmore',
