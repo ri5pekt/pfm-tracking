@@ -1,18 +1,18 @@
 -- Carriers from live Tracking API mix (§13) + status_mappings seed
 
-INSERT INTO carriers (code, display_name, shipbob_aliases, trackingmore_code) VALUES
-  ('amazon_shipping', 'Amazon Shipping', ARRAY['Amazon Shipping', 'AmazonShipping', 'amazon shipping'], NULL),
-  ('speedx', 'SpeedX', ARRAY['SpeedX', 'speedx', 'Speed X'], NULL),
-  ('uniuni', 'UniUni', ARRAY['UniUni', 'uniuni', 'Uni Uni'], 'uniuni'),
-  ('osm_worldwide', 'OSM Worldwide', ARRAY['OSMWorldwide', 'OSM Worldwide', 'osmworldwide'], NULL),
-  ('cirro', 'Cirro', ARRAY['Cirro', 'cirro'], NULL),
-  ('usps', 'USPS', ARRAY['USPS', 'usps', 'Stamps', 'Stamps.com'], 'usps'),
-  ('ontrac', 'OnTrac', ARRAY['OnTrac', 'ontrac', 'On Trac'], 'ontrac'),
-  ('better_trucks', 'Better Trucks', ARRAY['BetterTrucks', 'Better Trucks'], NULL),
-  ('fedex', 'FedEx', ARRAY['FedEx', 'fedex'], 'fedex'),
-  ('dhl_ecs', 'DHL eCommerce', ARRAY['DhlEcs', 'DHL eCommerce', 'DHLEcommerce', 'dhlecs'], 'dhlglobalmail'),
-  ('ups', 'UPS', ARRAY['UPS', 'ups'], 'ups'),
-  ('shipbob_freight', 'ShipBob Freight', ARRAY['ShipBob Freight', 'ShipBobFreight'], NULL)
+INSERT INTO carriers (code, display_name, shipbob_aliases, trackingmore_code, tracking_url_template) VALUES
+  ('amazon_shipping', 'Amazon Shipping', ARRAY['Amazon Shipping', 'AmazonShipping', 'amazon shipping'], NULL, NULL),
+  ('speedx', 'SpeedX', ARRAY['SpeedX', 'speedx', 'Speed X'], NULL, NULL),
+  ('uniuni', 'UniUni', ARRAY['UniUni', 'uniuni', 'Uni Uni'], 'uniuni', NULL),
+  ('osm_worldwide', 'OSM Worldwide', ARRAY['OSMWorldwide', 'OSM Worldwide', 'osmworldwide'], NULL, NULL),
+  ('cirro', 'Cirro', ARRAY['Cirro', 'cirro'], NULL, NULL),
+  ('usps', 'USPS', ARRAY['USPS', 'usps', 'Stamps', 'Stamps.com'], 'usps', 'https://tools.usps.com/go/TrackConfirmAction?tLabels={tracking_number}'),
+  ('ontrac', 'OnTrac', ARRAY['OnTrac', 'ontrac', 'On Trac'], 'ontrac', 'https://www.ontrac.com/tracking/?number={tracking_number}'),
+  ('better_trucks', 'Better Trucks', ARRAY['BetterTrucks', 'Better Trucks'], NULL, NULL),
+  ('fedex', 'FedEx', ARRAY['FedEx', 'fedex'], 'fedex', 'https://www.fedex.com/fedextrack/?trknbr={tracking_number}'),
+  ('dhl_ecs', 'DHL eCommerce', ARRAY['DhlEcs', 'DHL eCommerce', 'DHLEcommerce', 'dhlecs'], 'dhlglobalmail', 'https://webtrack.dhlglobalmail.com/?trackingnumber={tracking_number}'),
+  ('ups', 'UPS', ARRAY['UPS', 'ups'], 'ups', 'https://www.ups.com/track?tracknum={tracking_number}'),
+  ('shipbob_freight', 'ShipBob Freight', ARRAY['ShipBob Freight', 'ShipBobFreight'], NULL, NULL)
 ON CONFLICT (code) DO NOTHING;
 
 -- Base status mappings (raw_status → internal). Substatus-specific rows can be added later.

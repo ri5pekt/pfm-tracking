@@ -43,14 +43,34 @@ export async function loadStatusMappings(db: Db): Promise<StatusMapping[]> {
   return rows;
 }
 
+/** DHL eCommerce "En Route" — TM still tags this inforeceived001. */
+const DHL_EN_ROUTE_TO_DC =
+  /en route to dhl(?:\s+e-?commerce)?(?:\s+distribution\s+center)?/i;
+
+export function isDhlEnRouteToDistributionCenter(
+  description: string | null | undefined,
+): boolean {
+  return Boolean(description && DHL_EN_ROUTE_TO_DC.test(description));
+}
+
 export function mapRawStatus(
   mappings: StatusMapping[],
   input: {
     source: 'shipbob' | 'trackingmore' | 'system';
     rawStatus: string;
     rawSubstatusCode?: string | null;
+    description?: string | null;
   },
 ): MappedStatus {
+  const raw = input.rawStatus.toLowerCase();
+  if (
+    input.source === 'trackingmore' &&
+    (raw === 'inforeceived' || raw === 'pending') &&
+    isDhlEnRouteToDistributionCenter(input.description)
+  ) {
+    return { internalStatus: 'IN_TRANSIT', statusRank: 40 };
+  }
+
   const exact = mappings.find(
     (m) =>
       m.source === input.source &&
