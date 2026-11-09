@@ -10,6 +10,7 @@ import {
   lookupPublicTracking,
   type PublicTrackingPayload,
 } from '../domain/public-tracking.js';
+import { hydrateMissingOrder } from '../domain/hydrate-order.js';
 
 type Deps = { db: Db; env: Env };
 
@@ -74,6 +75,19 @@ function renderTrackingPage(data: PublicTrackingPayload | null, mode: 'track' | 
     .replace('__PFM_MODE__', mode)
     .replace('__PFM_PAYLOAD__', payload)
     .replace('__PFM_ERROR__', data ? 'null' : JSON.stringify('not_found'));
+}
+
+function renderHydratePage(input: { orderNumber: string; email?: string; postcode?: string }): string {
+  const html = loadTemplate();
+  const payload = JSON.stringify({
+    orderNumber: input.orderNumber,
+    email: input.email ?? '',
+    postcode: input.postcode ?? '',
+  }).replace(/</g, '\\u003c');
+  return html
+    .replace('__PFM_MODE__', 'hydrate')
+    .replace('__PFM_PAYLOAD__', payload)
+    .replace('__PFM_ERROR__', 'null');
 }
 
 function renderLookupPage(error: string | null = null): string {
@@ -153,7 +167,23 @@ export async function registerPublicTrackingRoutes(
     });
 
     if (!result) {
-      return reply.code(404).send({ error: 'not_found' });
+      await hydrateMissingOrder(db, env, {
+        orderNumber: parsed.data.orderNumber,
+        email: parsed.data.email,
+        postcode: parsed.data.postcode,
+      });
+      const again = await lookupPublicTracking(db, {
+        orderNumber: parsed.data.orderNumber,
+        email: parsed.data.email,
+        postcode: parsed.data.postcode,
+        tokenSecret: env.ADMIN_SESSION_SECRET,
+        publicBaseUrl: env.PUBLIC_BASE_URL,
+      });
+      if (!again) return reply.code(404).send({ error: 'not_found' });
+      return {
+        trackingUrl: again.trackingUrl,
+        order: again.payload,
+      };
     }
 
     return {
@@ -199,8 +229,8 @@ export async function registerPublicTrackingRoutes(
 
     if (!result) {
       reply.header('X-Robots-Tag', 'noindex, nofollow');
-      reply.type('text/html').code(404);
-      return renderLookupPage('not_found');
+      reply.type('text/html');
+      return renderHydratePage({ orderNumber, email, postcode });
     }
 
     return reply.redirect(result.trackingUrl);

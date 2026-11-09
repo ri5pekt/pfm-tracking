@@ -107,3 +107,19 @@ export async function lookupExternalOrder(
     shipments,
   };
 }
+
+/**
+ * DB lookup first; on miss, ingest from ShipBob then KLB (same as `/lookup`),
+ * then read again. Hydrate is injected so tests do not call vendors.
+ */
+export async function resolveExternalOrder(
+  db: Db,
+  orderId: string,
+  hydrate: () => Promise<boolean>,
+): Promise<ExternalOrderPayload | null> {
+  const existing = await lookupExternalOrder(db, orderId);
+  if (existing) return existing;
+  const ingested = await hydrate();
+  if (!ingested) return null;
+  return lookupExternalOrder(db, orderId);
+}

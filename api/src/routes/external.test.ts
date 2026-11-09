@@ -137,7 +137,7 @@ describe('external order API', () => {
     }
   });
 
-  it('returns 404 when the order is not in the hub', async () => {
+  it('returns 404 when the order is not in the hub or at vendors', async () => {
     const empty = await buildApp({
       db: mockDb([[]]),
       env: testEnv(),

@@ -1,19 +1,10 @@
 import type { FastifyInstance } from 'fastify';
 import type { Env } from '../config.js';
 import type { Db } from '../db/pool.js';
+import { authorizeApiKey } from '../lib/api-key-auth.js';
 import { resolveOrderTrackingUrl, statusLabel } from '../domain/public-tracking.js';
 
 type Deps = { db: Db; env: Env };
-
-function authorizeRichPanel(request: { headers: Record<string, unknown> }, env: Env): boolean {
-  if (!env.RICHPANEL_API_KEY) return false;
-  const header = request.headers['x-api-key'] ?? request.headers.authorization;
-  if (typeof header !== 'string') return false;
-  const token = header.toLowerCase().startsWith('bearer ')
-    ? header.slice(7).trim()
-    : header.trim();
-  return token === env.RICHPANEL_API_KEY;
-}
 
 export async function registerRichPanelRoutes(app: FastifyInstance, deps: Deps): Promise<void> {
   const { db, env } = deps;
@@ -21,7 +12,7 @@ export async function registerRichPanelRoutes(app: FastifyInstance, deps: Deps):
   app.get<{ Params: { orderNumber: string } }>(
     '/api/richpanel/orders/:orderNumber',
     async (request, reply) => {
-      if (!authorizeRichPanel(request, env)) {
+      if (!authorizeApiKey(request, env.RICHPANEL_API_KEY)) {
         return reply.code(401).send({ error: 'unauthorized' });
       }
 
