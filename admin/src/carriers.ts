@@ -12,6 +12,7 @@ export const CARRIER_LOGOS: Record<string, string> = {
   uniuni: `/carriers/uniuni.png?v=${LOGO_V}`,
   speedx: `/carriers/speedx.png?v=${LOGO_V}`,
   cirro: `/carriers/cirro.png?v=${LOGO_V}`,
+  gofo: `/carriers/gofo.png?v=${LOGO_V}`,
   osm_worldwide: `/carriers/osm.png?v=${LOGO_V}`,
   better_trucks: `/carriers/better-trucks.png?v=${LOGO_V}`,
 };
