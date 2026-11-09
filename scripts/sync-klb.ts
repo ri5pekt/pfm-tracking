@@ -23,6 +23,8 @@ import {
 const JOB = 'klb.sync';
 /** Cap TrackingMore create/get calls per run to stay under quota. */
 const MAX_TM_ENRICH_PER_RUN = 80;
+/** Older shipments never gain TM history; retrying them every run only burns the enrich cap. */
+const TM_ENRICH_MAX_AGE_DAYS = 60;
 
 function isoDateDaysAgo(days: number): string {
   const d = new Date();
@@ -127,9 +129,10 @@ async function main(): Promise<void> {
            s.aggregator_id IS NULL
            OR NOT EXISTS (SELECT 1 FROM tracking_events te WHERE te.shipment_id = s.id)
          )
+         AND coalesce(s.shipped_at, o.ordered_at, s.created_at) > now() - make_interval(days => $2)
        ORDER BY s.created_at DESC
        LIMIT $1`,
-      [MAX_TM_ENRICH_PER_RUN],
+      [MAX_TM_ENRICH_PER_RUN, TM_ENRICH_MAX_AGE_DAYS],
     );
 
     console.log(`[klb] tm enrich queue=${pending.rows.length} (cap ${MAX_TM_ENRICH_PER_RUN})`);

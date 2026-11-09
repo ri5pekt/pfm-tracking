@@ -11,6 +11,9 @@ import {
 } from './client.js';
 
 const TERMINAL = new Set(['DELIVERED', 'CANCELLED', 'RETURNED_TO_SENDER']);
+/** Open shipments older than this drop out of the poll unless they moved recently. */
+export const POLL_MAX_AGE_DAYS = 60;
+export const POLL_RECENT_MOVEMENT_DAYS = 14;
 
 export type TrackingMorePollResult = {
   considered: number;
@@ -77,12 +80,17 @@ export async function pollOpenTrackingMoreShipments(
          $2::boolean
          OR s.internal_status NOT IN ('DELIVERED','CANCELLED','RETURNED_TO_SENDER')
        )
+       AND (
+         $2::boolean
+         OR coalesce(s.shipped_at, o.ordered_at, s.created_at) > now() - make_interval(days => $3)
+         OR s.last_event_at > now() - make_interval(days => $4)
+       )
      ORDER BY
        CASE WHEN s.aggregator_id IS NULL THEN 0 ELSE 1 END,
        s.last_polled_at ASC NULLS FIRST,
        s.id ASC
      LIMIT $1`,
-    [limit, opts?.includeTerminal ?? false],
+    [limit, opts?.includeTerminal ?? false, POLL_MAX_AGE_DAYS, POLL_RECENT_MOVEMENT_DAYS],
   );
 
   const result: TrackingMorePollResult = {

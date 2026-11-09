@@ -6,6 +6,10 @@ import {
   evaluateTrackingCoverage,
   type OpsHealth,
 } from '../lib/ops-health.js';
+import {
+  POLL_MAX_AGE_DAYS,
+  POLL_RECENT_MOVEMENT_DAYS,
+} from '../integrations/trackingmore/poll.js';
 
 export async function collectOpsHealth(db: Db): Promise<OpsHealth> {
   const now = new Date();
@@ -60,12 +64,18 @@ export async function collectOpsHealth(db: Db): Promise<OpsHealth> {
   // COALESCE(last_polled_at, created_at) treats a never-polled shipment as stale only once it's
   // actually old enough to have been missed — a shipment created 2 minutes ago isn't a bug.
   const coverage = await db.query<{ n: string; oldest: Date | null }>(
-    `SELECT count(*)::text AS n, min(COALESCE(last_polled_at, created_at)) AS oldest
-     FROM shipments
-     WHERE aggregator = 'trackingmore'
-       AND tracking_number IS NOT NULL
-       AND internal_status NOT IN ('DELIVERED', 'CANCELLED', 'RETURNED_TO_SENDER')
-       AND COALESCE(last_polled_at, created_at) < now() - interval '2 hours'`,
+    `SELECT count(*)::text AS n, min(COALESCE(s.last_polled_at, s.created_at)) AS oldest
+     FROM shipments s
+     JOIN orders o ON o.id = s.order_id
+     WHERE s.aggregator = 'trackingmore'
+       AND s.tracking_number IS NOT NULL
+       AND s.internal_status NOT IN ('DELIVERED', 'CANCELLED', 'RETURNED_TO_SENDER')
+       AND (
+         coalesce(s.shipped_at, o.ordered_at, s.created_at) > now() - make_interval(days => $1)
+         OR s.last_event_at > now() - make_interval(days => $2)
+       )
+       AND COALESCE(s.last_polled_at, s.created_at) < now() - interval '2 hours'`,
+    [POLL_MAX_AGE_DAYS, POLL_RECENT_MOVEMENT_DAYS],
   );
   const trackingCoverage = evaluateTrackingCoverage({
     staleCount: Number(coverage.rows[0]?.n ?? 0),
