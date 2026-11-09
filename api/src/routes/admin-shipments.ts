@@ -8,6 +8,10 @@ import { getSession } from '../lib/session.js';
 import { TrackingMoreClient } from '../integrations/trackingmore/client.js';
 import { retrackShipment } from '../integrations/trackingmore/retrack.js';
 
+const DATE_ONLY = /^\d{4}-\d{2}-\d{2}$/;
+/** Date-range days are Israel calendar days, matching how the admin displays dates. */
+const DISPLAY_TZ = 'Asia/Jerusalem';
+
 export async function registerAdminShipmentRoutes(
   app: FastifyInstance,
   deps: { db: Db; env: Env },
@@ -28,6 +32,9 @@ export async function registerAdminShipmentRoutes(
       offset?: string;
       sortBy?: string;
       sortDir?: string;
+      dateField?: string;
+      dateFrom?: string;
+      dateTo?: string;
     };
 
     const allowedPageSizes = new Set([20, 50, 100]);
@@ -60,14 +67,32 @@ export async function registerAdminShipmentRoutes(
     const sourceFilter =
       sourceRaw === 'shipbob' || sourceRaw === 'klb' ? sourceRaw : 'all';
 
-    const countParams: unknown[] = [];
-    const countWhere =
-      sourceFilter === 'all'
-        ? ''
-        : (() => {
-            countParams.push(sourceFilter);
-            return `WHERE source = $1`;
-          })();
+    const dateColumn = query.dateField === 'imported' ? 'o.created_at' : 'o.ordered_at';
+    const dateFrom = DATE_ONLY.test(query.dateFrom ?? '') ? query.dateFrom! : null;
+    const dateTo = DATE_ONLY.test(query.dateTo ?? '') ? query.dateTo! : null;
+
+    const filters: string[] = [];
+    const params: unknown[] = [];
+
+    if (sourceFilter !== 'all') {
+      params.push(sourceFilter);
+      filters.push(`s.source = $${params.length}`);
+    }
+    if (dateFrom) {
+      params.push(dateFrom);
+      filters.push(
+        `${dateColumn} >= ($${params.length}::date)::timestamp AT TIME ZONE '${DISPLAY_TZ}'`,
+      );
+    }
+    if (dateTo) {
+      params.push(dateTo);
+      filters.push(
+        `${dateColumn} < ($${params.length}::date + 1)::timestamp AT TIME ZONE '${DISPLAY_TZ}'`,
+      );
+    }
+
+    const countParams = [...params];
+    const countWhere = filters.length ? `WHERE ${filters.join(' AND ')}` : '';
 
     const countsResult = await db.query<{
       all: string;
@@ -84,28 +109,21 @@ export async function registerAdminShipmentRoutes(
     }>(
       `SELECT
          count(*)::text AS all,
-         count(*) FILTER (WHERE internal_status = 'ORDER_RECEIVED')::text AS order_received,
-         count(*) FILTER (WHERE internal_status = 'PROCESSING')::text AS processing,
-         count(*) FILTER (WHERE internal_status = 'LABEL_CREATED')::text AS label_created,
-         count(*) FILTER (WHERE internal_status = 'IN_TRANSIT')::text AS in_transit,
-         count(*) FILTER (WHERE internal_status = 'OUT_FOR_DELIVERY')::text AS out_for_delivery,
-         count(*) FILTER (WHERE internal_status = 'EXCEPTION')::text AS exception,
-         count(*) FILTER (WHERE is_stalled)::text AS stalled,
-         count(*) FILTER (WHERE internal_status = 'DELIVERED')::text AS delivered,
-         count(*) FILTER (WHERE internal_status = 'RETURNED_TO_SENDER')::text AS returned_to_sender,
-         count(*) FILTER (WHERE internal_status = 'CANCELLED')::text AS cancelled
-       FROM shipments
+         count(*) FILTER (WHERE s.internal_status = 'ORDER_RECEIVED')::text AS order_received,
+         count(*) FILTER (WHERE s.internal_status = 'PROCESSING')::text AS processing,
+         count(*) FILTER (WHERE s.internal_status = 'LABEL_CREATED')::text AS label_created,
+         count(*) FILTER (WHERE s.internal_status = 'IN_TRANSIT')::text AS in_transit,
+         count(*) FILTER (WHERE s.internal_status = 'OUT_FOR_DELIVERY')::text AS out_for_delivery,
+         count(*) FILTER (WHERE s.internal_status = 'EXCEPTION')::text AS exception,
+         count(*) FILTER (WHERE s.is_stalled)::text AS stalled,
+         count(*) FILTER (WHERE s.internal_status = 'DELIVERED')::text AS delivered,
+         count(*) FILTER (WHERE s.internal_status = 'RETURNED_TO_SENDER')::text AS returned_to_sender,
+         count(*) FILTER (WHERE s.internal_status = 'CANCELLED')::text AS cancelled
+       FROM shipments s
+       JOIN orders o ON o.id = s.order_id
        ${countWhere}`,
       countParams,
     );
-
-    const filters: string[] = [];
-    const params: unknown[] = [];
-
-    if (sourceFilter !== 'all') {
-      params.push(sourceFilter);
-      filters.push(`s.source = $${params.length}`);
-    }
 
     const statusFilters: Record<string, string> = {
       order_received: `s.internal_status = 'ORDER_RECEIVED'`,

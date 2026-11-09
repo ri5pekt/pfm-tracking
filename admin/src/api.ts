@@ -66,9 +66,17 @@ export function fetchShipments(params?: {
   pageSize?: number;
   sortBy?: string;
   sortDir?: 'asc' | 'desc';
+  dateField?: 'ordered' | 'imported';
+  dateFrom?: string;
+  dateTo?: string;
 }) {
   const sp = new URLSearchParams();
   if (params?.q) sp.set('q', params.q);
+  if (params?.dateFrom || params?.dateTo) {
+    sp.set('dateField', params.dateField ?? 'ordered');
+    if (params.dateFrom) sp.set('dateFrom', params.dateFrom);
+    if (params.dateTo) sp.set('dateTo', params.dateTo);
+  }
   if (params?.status && params.status !== 'all') sp.set('status', params.status);
   if (params?.source && params.source !== 'all') sp.set('source', params.source);
   if (params?.page) sp.set('page', String(params.page));

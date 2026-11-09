@@ -15,7 +15,7 @@ export const router = createRouter({
   routes: [
     { path: '/login', component: LoginView, meta: { public: true } },
     { path: '/accept-invite', component: AcceptInviteView, meta: { public: true } },
-    { path: '/', redirect: '/dashboard' },
+    { path: '/', redirect: '/shipments' },
     { path: '/dashboard', component: DashboardView },
     { path: '/shipments', component: ShipmentsView },
     { path: '/sync-runs', component: SyncRunsView },

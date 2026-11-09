@@ -13,6 +13,9 @@ const total = ref(0);
 const activeSource = ref('all');
 const activeTab = ref('all');
 const search = ref('');
+const dateField = ref<'ordered' | 'imported'>('ordered');
+const dateFrom = ref('');
+const dateTo = ref('');
 const loading = ref(false);
 const page = ref(1);
 const pageSize = ref(20);
@@ -83,6 +86,9 @@ async function load() {
       pageSize: pageSize.value,
       sortBy: sortBy.value,
       sortDir: sortDir.value,
+      dateField: dateField.value,
+      dateFrom: dateFrom.value || undefined,
+      dateTo: dateTo.value || undefined,
     });
     counts.value = data.counts;
     items.value = data.items;
@@ -97,6 +103,19 @@ async function load() {
 function onSearch() {
   page.value = 1;
   void load();
+}
+
+const dateFilterActive = computed(() => Boolean(dateFrom.value || dateTo.value));
+
+function onDateChange() {
+  page.value = 1;
+  void load();
+}
+
+function clearDates() {
+  dateFrom.value = '';
+  dateTo.value = '';
+  onDateChange();
 }
 
 function onSource(key: string) {
@@ -386,6 +405,28 @@ onMounted(() => {
         >
           {{ tab.label }}
           <span>({{ counts[tab.key] ?? 0 }})</span>
+        </button>
+      </div>
+      <div class="date-filter">
+        <select v-model="dateField" aria-label="Date field" @change="dateFilterActive && onDateChange()">
+          <option value="ordered">Order created</option>
+          <option value="imported">Imported</option>
+        </select>
+        <label>
+          From
+          <input v-model="dateFrom" type="date" :max="dateTo || undefined" @change="onDateChange" />
+        </label>
+        <label>
+          To
+          <input v-model="dateTo" type="date" :min="dateFrom || undefined" @change="onDateChange" />
+        </label>
+        <button
+          v-if="dateFilterActive"
+          class="link-btn"
+          type="button"
+          @click="clearDates"
+        >
+          Clear dates
         </button>
       </div>
       <div class="toolbar">
@@ -872,6 +913,29 @@ onMounted(() => {
 .muted {
   color: var(--muted);
   font-size: 0.85rem;
+}
+.date-filter {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: 12px;
+  padding: 12px 16px 0;
+  font-size: 0.9rem;
+  color: var(--muted);
+}
+.date-filter label {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+}
+.date-filter select,
+.date-filter input {
+  border: 1px solid var(--line);
+  border-radius: 8px;
+  padding: 6px 8px;
+  background: #fff;
+  font: inherit;
+  color: inherit;
 }
 .table-scroll {
   overflow-x: auto;
