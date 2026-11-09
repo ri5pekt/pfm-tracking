@@ -50,6 +50,14 @@ export async function pollOpenTrackingMoreShipments(
 ): Promise<TrackingMorePollResult> {
   // Keep cycles small enough that we stay under ~10 get-req/s with batching.
   const limit = opts?.limit ?? 80;
+  // Ordering note: previously sorted by (event_count, last_event_at, updated_at) with no stable
+  // final tiebreaker. Ties are common (many KLB shipments share a label-creation day, and KLB
+  // sync bumps updated_at on every row every 20 min regardless of change) — Postgres does not
+  // guarantee stable ordering across ties on separate query executions, so a specific row could
+  // be starved out of the LIMIT slice indefinitely even though it's logically "most overdue".
+  // last_polled_at (stamped on every row we actually examine, success or error) + id gives a
+  // true least-recently-checked round robin: every open shipment is guaranteed to surface within
+  // ceil(backlog / limit) cycles.
   const { rows } = await db.query<{
     id: string;
     order_id: string;
@@ -57,12 +65,10 @@ export async function pollOpenTrackingMoreShipments(
     aggregator_id: string | null;
     carrier_code: string | null;
     internal_status: string;
-    event_count: string;
     order_number: string | null;
   }>(
     `SELECT s.id, s.order_id, s.tracking_number, s.aggregator_id, s.carrier_code,
-            s.internal_status, o.order_number,
-            (SELECT count(*)::text FROM tracking_events te WHERE te.shipment_id = s.id) AS event_count
+            s.internal_status, o.order_number
      FROM shipments s
      JOIN orders o ON o.id = s.order_id
      WHERE s.aggregator = 'trackingmore'
@@ -73,9 +79,8 @@ export async function pollOpenTrackingMoreShipments(
        )
      ORDER BY
        CASE WHEN s.aggregator_id IS NULL THEN 0 ELSE 1 END,
-       (SELECT count(*) FROM tracking_events te WHERE te.shipment_id = s.id) ASC,
-       s.last_event_at NULLS FIRST,
-       s.updated_at ASC
+       s.last_polled_at ASC NULLS FIRST,
+       s.id ASC
      LIMIT $1`,
     [limit, opts?.includeTerminal ?? false],
   );
@@ -120,6 +125,9 @@ export async function pollOpenTrackingMoreShipments(
         const tracking = got.get(row.tracking_number);
         if (!tracking) {
           result.errors += 1;
+          // Still round-robin past this row — a persistently-erroring shipment must not
+          // monopolize the front of the last_polled_at queue forever.
+          await db.query(`UPDATE shipments SET last_polled_at = now() WHERE id = $1`, [row.id]);
           result.items.push({
             shipmentId: row.id,
             orderId: row.order_id,

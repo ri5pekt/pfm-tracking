@@ -14,6 +14,7 @@ import {
 } from '../api/src/lib/ingestion-run.js';
 
 const JOB = 'trackingmore.poll';
+const POLL_LIMIT = 80;
 
 async function main(): Promise<void> {
   const env = loadEnv();
@@ -26,20 +27,34 @@ async function main(): Promise<void> {
     apiBase: env.TRACKINGMORE_API_BASE,
     db,
   });
+  const started = Date.now();
 
   console.log(`=== ${JOB} ===`);
   try {
+    const openBefore = await db.query<{ internal_status: string; n: string }>(
+      `SELECT internal_status, count(*)::text AS n
+       FROM shipments
+       WHERE aggregator = 'trackingmore'
+         AND tracking_number IS NOT NULL
+         AND internal_status NOT IN ('DELIVERED', 'CANCELLED', 'RETURNED_TO_SENDER')
+       GROUP BY 1
+       ORDER BY count(*) DESC`,
+    );
+    const openByStatus = Object.fromEntries(
+      openBefore.rows.map((r) => [r.internal_status, Number(r.n)]),
+    );
+    const openTotal = Object.values(openByStatus).reduce((a, b) => a + b, 0);
+
     const result = await pollOpenTrackingMoreShipments(db, tm, {
-      limit: 80,
+      limit: POLL_LIMIT,
       // Prod: don't re-poll terminals every cycle (burns quota on seed backlog)
       includeTerminal: false,
     });
-    console.log(result);
 
     await appendRunItems(
       db,
       runId,
-      result.items.map((i) => ({
+      result.items.slice(0, 100).map((i) => ({
         orderNumber: i.orderNumber,
         orderId: i.orderId,
         shipmentId: i.shipmentId,
@@ -65,16 +80,31 @@ async function main(): Promise<void> {
           : undefined,
     });
 
-    const summary = await db.query(`
-      SELECT s.internal_status,
-             count(*)::int AS n,
-             round(avg((SELECT count(*) FROM tracking_events te WHERE te.shipment_id = s.id))::numeric, 1) AS avg_events
-      FROM shipments s
-      WHERE s.source = 'klb'
-      GROUP BY 1
-      ORDER BY n DESC
-    `);
-    console.log('KLB after sync:', summary.rows);
+    const hitRatePct =
+      result.considered > 0
+        ? Math.round(
+            (result.items.filter((i) => i.eventsInserted > 0).length / result.considered) * 1000,
+          ) / 10
+        : 0;
+
+    console.log(
+      `[trackingmore.poll] summary ${JSON.stringify({
+        pollLimit: POLL_LIMIT,
+        openTotal,
+        openByStatus,
+        durationSec: Math.round((Date.now() - started) / 1000),
+        considered: result.considered,
+        refreshed: result.refreshed,
+        eventsInserted: result.eventsInserted,
+        withCheckpoints: result.withCheckpoints,
+        stillPending: result.stillPending,
+        registered: result.registered,
+        shipmentsChanged: result.items.filter((i) => i.eventsInserted > 0).length,
+        hitRatePct,
+        errors: result.errors,
+        stoppedForRateLimit: result.stoppedForRateLimit,
+      })}`,
+    );
   } catch (err) {
     await finishIngestionRun(db, runId, {
       status: 'failed',

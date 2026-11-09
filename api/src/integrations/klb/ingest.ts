@@ -3,6 +3,7 @@ import { loadStatusMappings } from '../../domain/status.js';
 import {
   appendTrackingEvent,
   refreshShipmentStatus,
+  replaceShipmentItems,
   resolveCarrierCode,
   upsertOrder,
   upsertShipment,
@@ -11,6 +12,7 @@ import {
   klbCarrierName,
   klbTrackingNumber,
   looksLikeDhlEcommerce,
+  type KlbClient,
   type KlbShippingOrder,
 } from '../klb/client.js';
 import {
@@ -77,6 +79,7 @@ export async function ingestKlbShipment(
     service: string | null;
     shipmentKey: string;
   },
+  klb?: KlbClient | null,
 ): Promise<{ orderId: string; shipmentId: string; created: boolean }> {
   const orderNumber = pickKlbOrderNumber(input.order);
   const shippedRaw = input.order.shippeddate;
@@ -89,7 +92,7 @@ export async function ingestKlbShipment(
     .join(' ')
     .trim();
 
-  const { id: orderId } = await upsertOrder(db, {
+  const { id: orderId, customerEmail } = await upsertOrder(db, {
     orderNumber,
     customerName: customerName || input.order.shippingaddress?.name || null,
     customerPhone: input.order.shippingaddress?.phone ?? null,
@@ -122,6 +125,26 @@ export async function ingestKlbShipment(
     statusRank: 30,
   });
 
+  if (klb) {
+    const existingItems = await db.query<{ n: string }>(
+      `SELECT count(*)::text AS n FROM shipment_items WHERE shipment_id = $1`,
+      [shipmentId],
+    );
+    const needItems = Number(existingItems.rows[0]?.n ?? 0) === 0;
+    if (needItems || !customerEmail) {
+      const detail = await klb.getCustomerOrder(orderNumber);
+      if (detail?.email && !customerEmail) {
+        await db.query(
+          `UPDATE orders SET customer_email = COALESCE(customer_email, $2), updated_at = now() WHERE id = $1`,
+          [orderId, detail.email],
+        );
+      }
+      if (needItems && detail?.items.length) {
+        await replaceShipmentItems(db, shipmentId, detail.items);
+      }
+    }
+  }
+
   return { orderId, shipmentId, created };
 }
 
@@ -130,6 +153,7 @@ export async function applyTrackingMoreTimeline(
   shipmentId: string,
   orderId: string,
   tracking: TrackingMoreTracking,
+  opts?: { emitNotifications?: boolean },
 ): Promise<{ eventsInserted: number }> {
   const mappings = await loadStatusMappings(db);
   const checkpoints = trackingMoreCheckpoints(tracking);
@@ -141,6 +165,7 @@ export async function applyTrackingMoreTimeline(
        aggregator = 'trackingmore',
        aggregator_id = COALESCE($2, aggregator_id),
        carrier_code = COALESCE($3, carrier_code),
+       last_polled_at = now(),
        updated_at = now()
      WHERE id = $1`,
     [shipmentId, tracking.id != null ? String(tracking.id) : null, carrierCode],
@@ -149,7 +174,7 @@ export async function applyTrackingMoreTimeline(
   // Empty TM history is common right after create — no fake events.
   // trackingmore.poll catches up when checkpoints appear.
   if (checkpoints.length === 0) {
-    await refreshShipmentStatus(db, shipmentId);
+    await refreshShipmentStatus(db, shipmentId, { emitNotifications: opts?.emitNotifications });
     return { eventsInserted: 0 };
   }
 
@@ -172,7 +197,7 @@ export async function applyTrackingMoreTimeline(
     if (result.inserted) eventsInserted += 1;
   }
 
-  await refreshShipmentStatus(db, shipmentId);
+  await refreshShipmentStatus(db, shipmentId, { emitNotifications: opts?.emitNotifications });
   return { eventsInserted };
 }
 
@@ -183,6 +208,7 @@ export async function enrichKlbWithTrackingMore(
   orderId: string,
   trackingNumber: string,
   preferredCourier?: string | null,
+  opts?: { emitNotifications?: boolean },
 ): Promise<{ eventsInserted: number; ok: boolean; error?: string }> {
   try {
     const courierHint =
@@ -193,7 +219,9 @@ export async function enrichKlbWithTrackingMore(
           : preferredCourier;
     const tracking = await tm.ensureAndGet(trackingNumber, courierHint);
     if (!tracking) return { eventsInserted: 0, ok: false, error: 'no_tracking_payload' };
-    const result = await applyTrackingMoreTimeline(db, shipmentId, orderId, tracking);
+    const result = await applyTrackingMoreTimeline(db, shipmentId, orderId, tracking, {
+      emitNotifications: opts?.emitNotifications,
+    });
     return { ...result, ok: true };
   } catch (err) {
     if (isTrackingMoreRateLimitError(err)) throw err;

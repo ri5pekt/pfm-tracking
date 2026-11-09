@@ -27,6 +27,19 @@ Exit criterion: a domestic ShipBob order shows a live timeline on our domain (po
 - [x] `npm run sync:trackingmore` catch-up + worker `trackingmore.poll` every 15m (TM lag after create)
 - Use `examples/shipbob/*.json` for unit/integration tests before hitting live APIs
 
+## Known gaps
+
+- [x] `scripts/sync-shipbob.ts` ran orders.sync → pending_recheck → tracking.poll
+      sequentially with no error isolation — an uncaught throw in orders.sync killed the
+      whole process, so tracking.poll silently never ran. Incident 2026-08-10/11:
+      `shipbob.tracking.poll` had zero runs (success or failure) for 32+ hours, collapsing
+      Klaviyo `sent` volume from ~2-4k/day to near zero. Fixed 2026-08-11 — each step is now
+      wrapped in its own try/catch so failures don't cascade.
+- [x] `SHIPBOB_API_BASE` pointed at the deprecated `/1.0` order API (hard cutoff
+      2026-08-31; already intermittently returning `410 api_version_deprecated` and
+      triggering the cascading failure above). Migrated to `/2026-07` (same version already
+      proven stable for the Tracking API) — fixed and deployed 2026-08-11.
+
 ## References
 - `docs/dev-plan.md` §5.1, §6, §7
 - `docs/research/shipbob-tracking-api-beta.md`

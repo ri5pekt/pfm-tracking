@@ -3,6 +3,7 @@ import {
   WATCHED_JOBS,
   buildOpsHealth,
   evaluateJobHealth,
+  evaluateTrackingCoverage,
   type OpsHealth,
 } from '../lib/ops-health.js';
 
@@ -56,5 +57,21 @@ export async function collectOpsHealth(db: Db): Promise<OpsHealth> {
      WHERE status = 'failed' AND started_at > now() - interval '2 hours'`,
   );
 
-  return buildOpsHealth(jobs, Number(failures.rows[0]?.n ?? 0), now);
+  // COALESCE(last_polled_at, created_at) treats a never-polled shipment as stale only once it's
+  // actually old enough to have been missed — a shipment created 2 minutes ago isn't a bug.
+  const coverage = await db.query<{ n: string; oldest: Date | null }>(
+    `SELECT count(*)::text AS n, min(COALESCE(last_polled_at, created_at)) AS oldest
+     FROM shipments
+     WHERE aggregator = 'trackingmore'
+       AND tracking_number IS NOT NULL
+       AND internal_status NOT IN ('DELIVERED', 'CANCELLED', 'RETURNED_TO_SENDER')
+       AND COALESCE(last_polled_at, created_at) < now() - interval '2 hours'`,
+  );
+  const trackingCoverage = evaluateTrackingCoverage({
+    staleCount: Number(coverage.rows[0]?.n ?? 0),
+    oldestUnpolledAt: coverage.rows[0]?.oldest ?? null,
+    now,
+  });
+
+  return buildOpsHealth(jobs, Number(failures.rows[0]?.n ?? 0), now, trackingCoverage);
 }

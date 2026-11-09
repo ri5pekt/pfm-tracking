@@ -39,6 +39,8 @@ async function main(): Promise<void> {
   const klb = new KlbClient({
     apiBase: env.KLB_API_BASE,
     legacySecureKey: env.KLB_LEGACY_API_SECRET,
+    apiKey: env.KLB_API_KEY,
+    apiSecret: env.KLB_API_SECRET,
     db,
   });
   const tm = new TrackingMoreClient({
@@ -72,7 +74,7 @@ async function main(): Promise<void> {
     for (const c of candidates) {
       const orderNumber = pickKlbOrderNumber(c.order);
       try {
-        const result = await ingestKlbShipment(db, c);
+        const result = await ingestKlbShipment(db, c, klb);
         upserted += 1;
         if (result.created) created += 1;
         items.push({

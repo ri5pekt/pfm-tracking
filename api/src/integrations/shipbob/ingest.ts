@@ -101,6 +101,7 @@ export async function applyShipBobTracking(
   db: Db,
   sourceShipmentId: string,
   record: ShipBobTrackingRecord,
+  opts?: { emitNotifications?: boolean },
 ): Promise<{ eventsInserted: number }> {
   const shipment = await db.query<{ id: string; order_id: string }>(
     `SELECT id, order_id FROM shipments WHERE source = 'shipbob' AND source_shipment_id = $1`,
@@ -162,8 +163,70 @@ export async function applyShipBobTracking(
     if (result.inserted) eventsInserted += 1;
   }
 
-  await refreshShipmentStatus(db, shipmentId);
+  await refreshShipmentStatus(db, shipmentId, {
+    emitNotifications: opts?.emitNotifications,
+  });
   return { eventsInserted };
+}
+
+/** Stay under ShipBob ~150 req/min when sweeping thousands of open IDs. */
+const TRACKING_BATCH_GAP_MS = 450;
+
+function sleep(ms: number): Promise<void> {
+  return new Promise((resolve) => setTimeout(resolve, ms));
+}
+
+function isRateLimitError(err: unknown): boolean {
+  const msg = err instanceof Error ? err.message : String(err);
+  return /\b429\b/.test(msg) || /rate limit/i.test(msg);
+}
+
+/**
+ * Fetch a tracking batch. On 5xx/other API errors (not 429), binary-split so one
+ * poisoned ShipmentId cannot fail the whole sweep — ShipBob sometimes 500s on
+ * specific IDs with an empty body.
+ */
+async function fetchTrackingRecordsResilient(
+  client: ShipBobClient,
+  ids: Array<string | number>,
+  counters: { rateLimitRetries: number; apiErrorsSkipped: number; splits: number },
+): Promise<ShipBobTrackingRecord[]> {
+  if (ids.length === 0) return [];
+
+  try {
+    return await client.getShipmentsTracking(ids);
+  } catch (err) {
+    let failure: unknown = err;
+    if (isRateLimitError(err)) {
+      counters.rateLimitRetries += 1;
+      console.warn('[shipbob.tracking] 429 — waiting 60s then retrying batch');
+      await sleep(60_000);
+      try {
+        return await client.getShipmentsTracking(ids);
+      } catch (retryErr) {
+        if (isRateLimitError(retryErr)) throw retryErr;
+        // Fall through to split/skip after cooldown.
+        failure = retryErr;
+      }
+    }
+
+    if (ids.length === 1) {
+      counters.apiErrorsSkipped += 1;
+      const msg = failure instanceof Error ? failure.message : String(failure);
+      console.warn(`[shipbob.tracking] skip id=${ids[0]} — ${msg.slice(0, 160)}`);
+      return [];
+    }
+
+    counters.splits += 1;
+    const mid = Math.ceil(ids.length / 2);
+    const left = ids.slice(0, mid);
+    const right = ids.slice(mid);
+    // Small gap between split halves to avoid bursting after a 500.
+    const a = await fetchTrackingRecordsResilient(client, left, counters);
+    await sleep(TRACKING_BATCH_GAP_MS);
+    const b = await fetchTrackingRecordsResilient(client, right, counters);
+    return [...a, ...b];
+  }
 }
 
 export async function pollShipBobTrackingForIds(
@@ -173,6 +236,11 @@ export async function pollShipBobTrackingForIds(
 ): Promise<{
   tracked: number;
   eventsInserted: number;
+  batches: number;
+  missingFromApi: number;
+  rateLimitRetries: number;
+  apiErrorsSkipped: number;
+  durationMs: number;
   refreshed: Array<{
     sourceShipmentId: string;
     shipmentId: string;
@@ -184,6 +252,7 @@ export async function pollShipBobTrackingForIds(
 }> {
   let tracked = 0;
   let eventsInserted = 0;
+  const counters = { rateLimitRetries: 0, apiErrorsSkipped: 0, splits: 0 };
   const refreshed: Array<{
     sourceShipmentId: string;
     shipmentId: string;
@@ -193,8 +262,14 @@ export async function pollShipBobTrackingForIds(
     eventsInserted: number;
   }> = [];
 
-  for (const batch of chunkIds(sourceShipmentIds, 25)) {
-    const records = await client.getShipmentsTracking(batch);
+  const started = Date.now();
+  const batches = chunkIds(sourceShipmentIds, 25);
+  for (let i = 0; i < batches.length; i += 1) {
+    const batch = batches[i]!;
+    if (i > 0) await sleep(TRACKING_BATCH_GAP_MS);
+
+    const records = await fetchTrackingRecordsResilient(client, batch, counters);
+
     const byId = new Map(records.map((r) => [String(r.shipment_id), r]));
     for (const id of batch) {
       const record = byId.get(String(id));
@@ -228,7 +303,29 @@ export async function pollShipBobTrackingForIds(
         }
       }
     }
+
+    if ((i + 1) % 40 === 0 || i + 1 === batches.length) {
+      const elapsedSec = Math.round((Date.now() - started) / 1000);
+      console.log(
+        `[shipbob.tracking] progress ${i + 1}/${batches.length} batches — tracked=${tracked} events+${eventsInserted} skipped=${counters.apiErrorsSkipped} elapsed=${elapsedSec}s`,
+      );
+    }
   }
 
-  return { tracked, eventsInserted, refreshed };
+  if (counters.apiErrorsSkipped > 0 || counters.splits > 0) {
+    console.warn(
+      `[shipbob.tracking] resilient fetch: skipped=${counters.apiErrorsSkipped} splits=${counters.splits} rateLimitRetries=${counters.rateLimitRetries}`,
+    );
+  }
+
+  return {
+    tracked,
+    eventsInserted,
+    batches: batches.length,
+    missingFromApi: Math.max(0, sourceShipmentIds.length - tracked - counters.apiErrorsSkipped),
+    rateLimitRetries: counters.rateLimitRetries,
+    apiErrorsSkipped: counters.apiErrorsSkipped,
+    durationMs: Date.now() - started,
+    refreshed,
+  };
 }

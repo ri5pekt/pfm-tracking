@@ -73,13 +73,13 @@ export type AppendEventInput = {
 export async function upsertOrder(
   db: Db,
   input: UpsertOrderInput,
-): Promise<{ id: string; created: boolean }> {
+): Promise<{ id: string; created: boolean; customerEmail: string | null }> {
   const existing = await db.query<{ id: string }>(
     `SELECT id FROM orders WHERE order_number = $1`,
     [input.orderNumber],
   );
   if (existing.rows[0]) {
-    await db.query(
+    const updated = await db.query<{ customer_email: string | null }>(
       `UPDATE orders SET
          customer_email = COALESCE($2, customer_email),
          customer_name = COALESCE($3, customer_name),
@@ -90,7 +90,8 @@ export async function upsertOrder(
          ordered_at = COALESCE($8, ordered_at),
          current_status = COALESCE($9, current_status),
          updated_at = now()
-       WHERE id = $1`,
+       WHERE id = $1
+       RETURNING customer_email`,
       [
         existing.rows[0].id,
         input.customerEmail ?? null,
@@ -103,18 +104,22 @@ export async function upsertOrder(
         input.currentStatus ?? null,
       ],
     );
-    return { id: existing.rows[0].id, created: false };
+    return {
+      id: existing.rows[0].id,
+      created: false,
+      customerEmail: updated.rows[0]?.customer_email ?? null,
+    };
   }
 
   const minted = mintPublicToken(input.tokenSecret);
-  const inserted = await db.query<{ id: string }>(
+  const inserted = await db.query<{ id: string; customer_email: string | null }>(
     `INSERT INTO orders (
        order_number, customer_email, customer_name, customer_phone,
        destination_city, destination_country, destination_postcode,
        public_token_hash, public_token_sealed,
        ordered_at, current_status
      ) VALUES ($1,$2,$3,$4,$5,$6,$7,$8,$9,$10,$11)
-     RETURNING id`,
+     RETURNING id, customer_email`,
     [
       input.orderNumber,
       input.customerEmail ?? null,
@@ -129,7 +134,11 @@ export async function upsertOrder(
       input.currentStatus ?? 'ORDER_RECEIVED',
     ],
   );
-  return { id: inserted.rows[0].id, created: true };
+  return {
+    id: inserted.rows[0].id,
+    created: true,
+    customerEmail: inserted.rows[0].customer_email ?? null,
+  };
 }
 
 export async function resolveCarrierCode(
@@ -269,6 +278,7 @@ export async function appendTrackingEvent(
     source: input.source,
     rawStatus: input.rawStatus,
     rawSubstatusCode: input.rawSubstatusCode,
+    description: input.description,
   });
 
   const eventHash = buildEventHash({
@@ -315,7 +325,16 @@ export async function appendTrackingEvent(
   };
 }
 
-export async function refreshShipmentStatus(db: Db, shipmentId: string): Promise<MappedStatus | null> {
+export type RefreshShipmentStatusOptions = {
+  /** Default true. Set false for on-demand historical hydrate so we do not email catch-up events. */
+  emitNotifications?: boolean;
+};
+
+export async function refreshShipmentStatus(
+  db: Db,
+  shipmentId: string,
+  opts?: RefreshShipmentStatusOptions,
+): Promise<MappedStatus | null> {
   const current = await db.query<{
     internal_status: string;
     status_rank: number;
@@ -390,10 +409,12 @@ export async function refreshShipmentStatus(db: Db, shipmentId: string): Promise
   );
 
   // Phase 3: Klaviyo / notification_log (deduped; dry-run by default)
-  try {
-    await emitShipmentNotifications(db, shipmentId, loadNotificationEnv());
-  } catch (err) {
-    console.warn(`[notifications] emit failed for ${shipmentId}:`, err);
+  if (opts?.emitNotifications !== false) {
+    try {
+      await emitShipmentNotifications(db, shipmentId, loadNotificationEnv());
+    } catch (err) {
+      console.warn(`[notifications] emit failed for ${shipmentId}:`, err);
+    }
   }
 
   return sticky;

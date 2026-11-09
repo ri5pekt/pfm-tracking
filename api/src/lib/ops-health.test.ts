@@ -3,6 +3,7 @@ import { describe, it } from 'node:test';
 import {
   buildOpsHealth,
   evaluateJobHealth,
+  evaluateTrackingCoverage,
   lagThresholdMs,
   type WatchedJob,
 } from './ops-health.js';
@@ -63,5 +64,49 @@ describe('ops-health', () => {
     );
     assert.equal(buildOpsHealth([lagging], 0, now).ok, false);
     assert.equal(buildOpsHealth([missingDaily], 0, now).ok, true);
+  });
+
+  it('tracking coverage is ok with no stale rows', () => {
+    const c = evaluateTrackingCoverage({ staleCount: 0, oldestUnpolledAt: null });
+    assert.equal(c.status, 'ok');
+  });
+
+  it('tracking coverage is ok when stale rows are within threshold', () => {
+    const now = new Date('2026-08-10T12:00:00Z');
+    const c = evaluateTrackingCoverage({
+      staleCount: 5,
+      oldestUnpolledAt: new Date('2026-08-10T11:00:00Z'), // 1h gap < 2h threshold
+      now,
+    });
+    assert.equal(c.status, 'ok');
+  });
+
+  it('tracking coverage goes stale beyond the threshold (poll-starvation regression guard)', () => {
+    const now = new Date('2026-08-10T12:00:00Z');
+    const c = evaluateTrackingCoverage({
+      staleCount: 3,
+      oldestUnpolledAt: new Date('2026-08-10T09:00:00Z'), // 3h gap > 2h threshold
+      now,
+    });
+    assert.equal(c.status, 'stale');
+    assert.equal(c.staleCount, 3);
+  });
+
+  it('buildOpsHealth fails when tracking coverage is stale even if all jobs report ok', () => {
+    const now = new Date('2026-08-10T12:00:00Z');
+    const okJob = evaluateJobHealth(job, {
+      lastSuccessAt: new Date(now.getTime() - 5 * 60 * 1000),
+      lastFinishedAt: new Date(now.getTime() - 5 * 60 * 1000),
+      lastStatus: 'success',
+      now,
+    });
+    const staleCoverage = evaluateTrackingCoverage({
+      staleCount: 10,
+      oldestUnpolledAt: new Date(now.getTime() - 3 * 3600 * 1000),
+      now,
+    });
+    const health = buildOpsHealth([okJob], 0, now, staleCoverage);
+    assert.equal(health.ok, false);
+    assert.match(health.alerts.join('\n'), /trackingmore\.poll coverage/);
   });
 });

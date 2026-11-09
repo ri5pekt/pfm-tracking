@@ -23,7 +23,16 @@ Exit criterion: an international KLB order has timeline parity with Narvar disco
 - [ ] Confirm USPS lag recovers via Retrack or poll auto-retrack
 - [ ] TrackingMore plan sized (~2,300 trackings/month)
 
+## Known gaps
+
+- [x] `trackingmore.poll` fair round-robin fix (was starving specific shipments) —
+      `009_shipments_last_polled_at.sql`, deployed 2026-08-10
+- [x] KLB orders have no `customer_email` → 100% of their Klaviyo notifications are
+      suppressed — fixed and deployed 2026-08-11, see
+      [`klb-customer-email-backfill.md`](klb-customer-email-backfill.md)
+
 ## References
 
 - `docs/dev-plan.md` §5.2–5.3, §8 Phase 2
 - `plans/phase-2-to-4-overview.md`
+- `plans/klb-customer-email-backfill.md`
