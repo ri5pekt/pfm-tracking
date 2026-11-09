@@ -6,9 +6,13 @@ export const NOTIFICATION_EVENT_TYPES = [
   'shipment.shipped',
   'shipment.in_transit',
   'shipment.out_for_delivery',
+  'shipment.available_for_pickup',
   'shipment.delivered',
   'shipment.delivery_attempt_failed',
   'shipment.exception',
+  'shipment.address_problem',
+  'shipment.no_access',
+  'shipment.returned_to_sender',
   'shipment.stalled',
 ] as const;
 
@@ -47,6 +51,98 @@ export function isDeliveryAttemptFailed(rawStatus: string | null | undefined): b
   if (!rawStatus) return false;
   const n = rawStatus.toLowerCase().replace(/[_\s-]/g, '');
   return ATTEMPT_FAIL_RAW.has(n) || n.includes('attemptfail') || n.includes('deliveryattempt');
+}
+
+function compactRaw(rawStatus: string | null | undefined): string {
+  return (rawStatus ?? '').toLowerCase().replace(/[_\s-]/g, '');
+}
+
+/** Post office / pickup point. TrackingMore raw status `pickup` is out-for-delivery, so text must match. */
+const AVAILABLE_FOR_PICKUP_TEXT =
+  /available for (?:pick ?up|collection)|ready for (?:pick ?up|collection)|awaiting collection|arrival at pick-?up|arrived at pickup point|held at post office/i;
+
+export function isAvailableForPickup(
+  rawStatus: string | null | undefined,
+  description: string | null | undefined,
+): boolean {
+  if (compactRaw(rawStatus) === 'availableforpickup') return true;
+  return AVAILABLE_FOR_PICKUP_TEXT.test(description ?? '');
+}
+
+const RETURNED_TO_SENDER_TEXT =
+  /return(?:ed|ing)? to (?:the )?(?:sender|shipper|warehouse)|returned to (?:us|sender)|being returned/i;
+
+export function isReturnedToSender(
+  rawStatus: string | null | undefined,
+  description: string | null | undefined,
+): boolean {
+  const raw = compactRaw(rawStatus);
+  if (raw === 'returntosender' || raw === 'returnedtosender') return true;
+  return RETURNED_TO_SENDER_TEXT.test(description ?? '');
+}
+
+const ADDRESS_PROBLEM_TEXT =
+  /insufficient address|invalid address|incorrect address|incomplete address|missing apartment|wrong address|address (?:problem|issue)|addressee unknown/i;
+
+export function isAddressProblem(description: string | null | undefined): boolean {
+  return ADDRESS_PROBLEM_TEXT.test(description ?? '');
+}
+
+const NO_ACCESS_TEXT = /no access|access code|gate code|unable to access|lack of an access/i;
+
+export function isNoAccess(description: string | null | undefined): boolean {
+  return NO_ACCESS_TEXT.test(description ?? '');
+}
+
+export type NotificationSignal = {
+  statusRank: number;
+  internalStatus: string;
+  isStalled: boolean;
+  latestRawStatus: string | null;
+  latestDescription: string | null;
+};
+
+/**
+ * Which Klaviyo events this shipment should have. Dedupe is once per shipment + type.
+ * Pickup replaces out-for-delivery. Address / no-access replace the generic exception.
+ * A return replaces in-transit and the generic exception on this refresh.
+ */
+export function notificationEventsFor(input: NotificationSignal): NotificationEventType[] {
+  const types: NotificationEventType[] = [];
+  const returned =
+    input.internalStatus === 'RETURNED_TO_SENDER' ||
+    isReturnedToSender(input.latestRawStatus, input.latestDescription);
+
+  if (input.statusRank >= 40 && !returned) {
+    types.push('shipment.in_transit');
+  }
+  if (input.internalStatus === 'OUT_FOR_DELIVERY') {
+    if (isAvailableForPickup(input.latestRawStatus, input.latestDescription)) {
+      types.push('shipment.available_for_pickup');
+    } else {
+      types.push('shipment.out_for_delivery');
+    }
+  }
+  if (input.internalStatus === 'DELIVERED') {
+    types.push('shipment.delivered');
+  }
+  if (returned) {
+    types.push('shipment.returned_to_sender');
+  } else if (input.internalStatus === 'EXCEPTION') {
+    if (isAddressProblem(input.latestDescription)) {
+      types.push('shipment.address_problem');
+    } else if (isNoAccess(input.latestDescription)) {
+      types.push('shipment.no_access');
+    } else if (isDeliveryAttemptFailed(input.latestRawStatus)) {
+      types.push('shipment.delivery_attempt_failed');
+    } else {
+      types.push('shipment.exception');
+    }
+  }
+  if (input.isStalled) {
+    types.push('shipment.stalled');
+  }
+  return types;
 }
 
 type ShipmentNotifyRow = {
@@ -227,12 +323,20 @@ function notificationTypeFor(eventType: NotificationEventType): string {
       return 'shipment_confirmation_standard';
     case 'shipment.out_for_delivery':
       return 'outfordelivery_standard';
+    case 'shipment.available_for_pickup':
+      return 'available_for_pickup';
     case 'shipment.delivered':
       return 'delivered_standard';
     case 'shipment.delivery_attempt_failed':
       return 'delivery_attempt_standard';
     case 'shipment.exception':
       return 'exception_undeliverable';
+    case 'shipment.address_problem':
+      return 'address_problem';
+    case 'shipment.no_access':
+      return 'no_access';
+    case 'shipment.returned_to_sender':
+      return 'returned_to_sender';
     case 'shipment.shipped':
       return 'shipped';
     case 'shipment.stalled':
@@ -241,34 +345,14 @@ function notificationTypeFor(eventType: NotificationEventType): string {
 }
 
 function candidateTypes(row: ShipmentNotifyRow): NotificationEventType[] {
-  const types: NotificationEventType[] = [];
-
   // Narvar-aligned: no separate "shipped"/label email — first tracking email is In Transit.
-  // if (row.tracking_number && row.status_rank >= 30) {
-  //   types.push('shipment.shipped');
-  // }
-  // Once per shipment (dedupe_key); rank>=40 covers catch-up if we miss the IN_TRANSIT poll.
-  if (row.status_rank >= 40) {
-    types.push('shipment.in_transit');
-  }
-  if (row.internal_status === 'OUT_FOR_DELIVERY') {
-    types.push('shipment.out_for_delivery');
-  }
-  if (row.internal_status === 'DELIVERED') {
-    types.push('shipment.delivered');
-  }
-  if (row.internal_status === 'EXCEPTION') {
-    if (isDeliveryAttemptFailed(row.latest_raw_status)) {
-      types.push('shipment.delivery_attempt_failed');
-    } else {
-      types.push('shipment.exception');
-    }
-  }
-  if (row.is_stalled) {
-    types.push('shipment.stalled');
-  }
-
-  return types;
+  return notificationEventsFor({
+    statusRank: row.status_rank,
+    internalStatus: row.internal_status,
+    isStalled: row.is_stalled,
+    latestRawStatus: row.latest_raw_status,
+    latestDescription: row.latest_description,
+  });
 }
 
 async function buildPayload(

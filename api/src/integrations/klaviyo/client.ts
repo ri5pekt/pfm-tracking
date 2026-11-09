@@ -84,12 +84,20 @@ export function klaviyoMetricName(eventType: string): string {
       return 'PFM Tracking - In Transit';
     case 'shipment.out_for_delivery':
       return 'PFM Tracking - Out For Delivery';
+    case 'shipment.available_for_pickup':
+      return 'PFM Tracking - Available For Pickup';
     case 'shipment.delivered':
       return 'PFM Tracking - Received Delivery';
     case 'shipment.delivery_attempt_failed':
       return 'PFM Tracking - Failed Delivery Attempt';
     case 'shipment.exception':
       return 'PFM Tracking - Delivery Exception';
+    case 'shipment.address_problem':
+      return 'PFM Tracking - Address Problem';
+    case 'shipment.no_access':
+      return 'PFM Tracking - No Access';
+    case 'shipment.returned_to_sender':
+      return 'PFM Tracking - Returned To Sender';
     case 'shipment.stalled':
       return 'PFM Tracking - Stalled';
     default:
