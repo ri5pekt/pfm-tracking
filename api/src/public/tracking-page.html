@@ -399,6 +399,26 @@
         margin: 0 0 1.15rem;
         font-size: 0.95rem;
       }
+      .hydrate-status {
+        display: grid;
+        justify-items: center;
+        gap: 0.85rem;
+        text-align: center;
+        padding: 0.5rem 0 0.25rem;
+      }
+      .spinner {
+        width: 36px;
+        height: 36px;
+        border: 3px solid var(--line);
+        border-top-color: var(--accent);
+        border-radius: 50%;
+        animation: spin 0.75s linear infinite;
+      }
+      @keyframes spin {
+        to {
+          transform: rotate(360deg);
+        }
+      }
       .form {
         display: grid;
         gap: 0.85rem;
@@ -519,8 +539,12 @@
 
       <div id="lookup" class="lookup-panel hidden">
         <section class="lookup-card">
-          <h1>Find your order</h1>
-          <p class="lede">Enter your order number and the email or postcode used at checkout.</p>
+          <h1 id="lookup-title">Find your order</h1>
+          <p class="lede" id="lookup-lede">Enter your order number and the email or postcode used at checkout.</p>
+          <div id="hydrate-status" class="hydrate-status hidden" aria-live="polite">
+            <div class="spinner" aria-hidden="true"></div>
+            <p class="lede" style="margin:0">Looking up your order…</p>
+          </div>
           <form class="form" id="lookup-form">
             <label>
               Order number
@@ -555,14 +579,26 @@
       const BOOT_ERROR = __PFM_ERROR__;
 
       const LINKS = {
-        rewards: 'https://www.particleformen.com/my-account/',
-        magazine: 'https://www.particleformen.com/particle-magazine/',
-        support: 'https://www.particleformen.com/faq-support/',
+        giftGuide: 'https://www.particleformen.com/all-products/#bundles',
+        rewards: 'https://www.particleformen.com/my-account/particle-rewards/',
+        bundle: 'https://www.particleformen.com/build-your-own-bundle/',
       };
+
+      /** Standard UTMs. GA4, Shopify, and Klaviyo read these on the landing session. */
+      function trackingLink(url, content) {
+        const u = new URL(url);
+        u.searchParams.set('utm_source', 'pfm_tracking');
+        u.searchParams.set('utm_medium', 'banner');
+        u.searchParams.set('utm_campaign', 'order_tracking');
+        u.searchParams.set('utm_content', content);
+        return u.toString();
+      }
 
       const errorEl = document.getElementById('error');
       const lookupEl = document.getElementById('lookup');
       const trackEl = document.getElementById('track');
+      const hydrateEl = document.getElementById('hydrate-status');
+      const lookupForm = document.getElementById('lookup-form');
 
       function showError(msg) {
         errorEl.textContent = msg;
@@ -730,14 +766,14 @@
       function promoHtml() {
         return `
           <section class="promo" aria-label="Particle links">
-            <a class="tile tile-rewards" href="${LINKS.rewards}" target="_blank" rel="noopener">
-              <img src="/brand/rewards.png" alt="Particle Rewards" width="1200" height="400" />
+            <a class="tile tile-rewards" href="${escapeAttr(trackingLink(LINKS.rewards, 'rewards'))}" target="_blank" rel="noopener">
+              <img src="/brand/rewards-banner.jpg" alt="Particle Rewards" width="1200" height="600" />
             </a>
-            <a class="tile tile-magazine" href="${LINKS.magazine}" target="_blank" rel="noopener">
-              <img src="/brand/magazine.png" alt="Particle Magazine" width="800" height="600" />
+            <a class="tile" href="${escapeAttr(trackingLink(LINKS.giftGuide, 'gift_guide'))}" target="_blank" rel="noopener">
+              <img src="/brand/gift-guide.jpg" alt="Gift guide" width="800" height="600" />
             </a>
-            <a class="tile tile-support" href="${LINKS.support}" target="_blank" rel="noopener">
-              <img src="/brand/support.png" alt="Support" width="800" height="600" />
+            <a class="tile" href="${escapeAttr(trackingLink(LINKS.bundle, 'build_your_own_bundle'))}" target="_blank" rel="noopener">
+              <img src="/brand/bundle.jpg" alt="Create your own bundle, up to 20% off" width="800" height="600" />
             </a>
           </section>`;
       }
@@ -861,7 +897,63 @@
         paint();
       }
 
-      if (BOOT_ERROR === 'not_found' && MODE === 'track') {
+      async function lookupOrder({ orderNumber, email, postcode }) {
+        const res = await fetch('/lookup', {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json', Accept: 'application/json' },
+          body: JSON.stringify({
+            orderNumber,
+            email: email || undefined,
+            postcode: postcode || undefined,
+          }),
+        });
+        if (!res.ok) return null;
+        return res.json();
+      }
+
+      async function runHydrate(input) {
+        lookupEl.classList.remove('hidden');
+        lookupForm.classList.add('hidden');
+        hydrateEl.classList.remove('hidden');
+        errorEl.classList.add('hidden');
+        const title = document.getElementById('lookup-title');
+        const lede = document.getElementById('lookup-lede');
+        if (title) title.textContent = 'Looking up your order';
+        if (lede) lede.textContent = 'This can take a few seconds for older shipments.';
+        try {
+          const body = await lookupOrder(input);
+          if (body?.trackingUrl) {
+            window.location.replace(body.trackingUrl);
+            return;
+          }
+          if (body?.order) {
+            hydrateEl.classList.add('hidden');
+            render(body.order);
+            return;
+          }
+        } catch {
+          /* fall through to not-found */
+        }
+        hydrateEl.classList.add('hidden');
+        lookupForm.classList.remove('hidden');
+        if (title) title.textContent = 'Find your order';
+        if (lede) lede.textContent = 'Enter your order number and the email or postcode used at checkout.';
+        const orderInput = lookupForm.querySelector('[name="orderNumber"]');
+        const emailInput = lookupForm.querySelector('[name="email"]');
+        const postInput = lookupForm.querySelector('[name="postcode"]');
+        if (orderInput && input.orderNumber) orderInput.value = input.orderNumber;
+        if (emailInput && input.email) emailInput.value = input.email;
+        if (postInput && input.postcode) postInput.value = input.postcode;
+        showError('We could not find a matching order. Check the details and try again.');
+      }
+
+      if (MODE === 'hydrate' && PAYLOAD && PAYLOAD.orderNumber) {
+        runHydrate({
+          orderNumber: PAYLOAD.orderNumber,
+          email: PAYLOAD.email || undefined,
+          postcode: PAYLOAD.postcode || undefined,
+        });
+      } else if (BOOT_ERROR === 'not_found' && MODE === 'track') {
         showError('We could not find that tracking link. Try looking up your order below.');
         lookupEl.classList.remove('hidden');
       } else if (MODE === 'lookup' || !PAYLOAD) {
@@ -885,20 +977,15 @@
         btn.disabled = true;
         errorEl.classList.add('hidden');
         try {
-          const res = await fetch('/lookup', {
-            method: 'POST',
-            headers: { 'Content-Type': 'application/json', Accept: 'application/json' },
-            body: JSON.stringify({
-              orderNumber,
-              email: email || undefined,
-              postcode: postcode || undefined,
-            }),
+          const body = await lookupOrder({
+            orderNumber,
+            email: email || undefined,
+            postcode: postcode || undefined,
           });
-          if (!res.ok) {
+          if (!body) {
             showError('We could not find a matching order. Check the details and try again.');
             return;
           }
-          const body = await res.json();
           if (body.trackingUrl) {
             window.location.href = body.trackingUrl;
             return;
